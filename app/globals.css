@@ -1,0 +1,255 @@
+@import "tailwindcss";
+
+:root {
+  /* core palette */
+  --void: #05030a;
+  --void-2: #0a0614;
+  --nebula: #1a0b2e;
+  --lilac: #cbb6ff;
+  --lilac-dim: #9b87c7;
+  --violet: #7c5cff;
+  --magenta: #c084fc;
+  --ice: #e8e4ff;
+  --glass: rgba(18, 10, 36, 0.55);
+  --stroke: rgba(203, 182, 255, 0.16);
+  --good: #6ee7b7;
+
+  /* derived */
+  --dim: rgba(232, 228, 255, 0.58);
+  --dimmer: rgba(232, 228, 255, 0.38);
+  --shell: 1180px;
+}
+
+@theme inline {
+  --color-void: var(--void);
+  --color-void-2: var(--void-2);
+  --color-nebula: var(--nebula);
+  --color-lilac: var(--lilac);
+  --color-lilac-dim: var(--lilac-dim);
+  --color-violet: var(--violet);
+  --color-magenta: var(--magenta);
+  --color-ice: var(--ice);
+  --color-good: var(--good);
+  --color-dim: var(--dim);
+
+  --font-display: var(--font-syne);
+  --font-body: var(--font-sora);
+}
+
+* {
+  min-width: 0;
+}
+
+html {
+  background: var(--void);
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--void);
+  color: var(--ice);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 300;
+  letter-spacing: 0.005em;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(124, 92, 255, 0.35);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 1px solid var(--lilac);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ---- primitives ---- */
+
+.shell {
+  width: 100%;
+  max-width: var(--shell);
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 5vw, 3rem);
+}
+
+.glass {
+  background: var(--glass);
+  border: 1px solid var(--stroke);
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  backdrop-filter: blur(18px) saturate(1.3);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  padding: 0.9rem 1.5rem;
+  transition: background 320ms ease, border-color 320ms ease, color 320ms ease,
+    box-shadow 320ms ease, transform 320ms ease;
+  will-change: transform;
+}
+
+.pill-primary {
+  background: linear-gradient(180deg, rgba(124, 92, 255, 0.92), rgba(94, 66, 224, 0.92));
+  border: 1px solid rgba(203, 182, 255, 0.34);
+  color: #f6f3ff;
+  box-shadow: 0 10px 40px -18px rgba(124, 92, 255, 0.9);
+}
+
+.pill-primary:hover {
+  background: linear-gradient(180deg, rgba(142, 113, 255, 1), rgba(110, 82, 240, 1));
+  box-shadow: 0 14px 52px -16px rgba(124, 92, 255, 1);
+}
+
+.pill-ghost {
+  background: rgba(14, 8, 28, 0.55);
+  border: 1px solid var(--stroke);
+  color: var(--lilac);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.pill-ghost:hover {
+  background: rgba(24, 14, 46, 0.68);
+  border-color: rgba(203, 182, 255, 0.3);
+  color: var(--ice);
+}
+
+.eyebrow {
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--dimmer);
+}
+
+.display {
+  font-family: var(--font-display), ui-sans-serif, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+  text-wrap: balance;
+}
+
+.accent {
+  color: var(--lilac);
+}
+
+/* the brand sentence */
+.verbatim {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 1.02;
+  color: var(--ice);
+}
+
+/* soft top/bottom light leak so type never sits on raw particles */
+.leak-top {
+  background: linear-gradient(180deg, rgba(5, 3, 10, 0.86) 0%, rgba(5, 3, 10, 0) 100%);
+}
+
+.leak-bottom {
+  background: linear-gradient(0deg, rgba(5, 3, 10, 0.92) 0%, rgba(5, 3, 10, 0) 100%);
+}
+
+.hero-scrim {
+  background: radial-gradient(
+    82% 54% at 6% 46%,
+    rgba(5, 3, 10, 0.78) 0%,
+    rgba(5, 3, 10, 0.4) 44%,
+    rgba(5, 3, 10, 0) 76%
+  );
+}
+
+/* soft absorber behind centred copy so type never fights the disk */
+.copy-veil {
+  background: radial-gradient(
+    62% 56% at 50% 50%,
+    rgba(5, 3, 10, 0.94) 0%,
+    rgba(5, 3, 10, 0.74) 46%,
+    rgba(5, 3, 10, 0) 78%
+  );
+}
+
+.vignette {
+  background: radial-gradient(
+    120% 90% at 50% 45%,
+    rgba(5, 3, 10, 0) 38%,
+    rgba(5, 3, 10, 0.55) 78%,
+    rgba(5, 3, 10, 0.92) 100%
+  );
+}
+
+.hairline {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(203, 182, 255, 0) 0%,
+    rgba(203, 182, 255, 0.22) 22%,
+    rgba(203, 182, 255, 0.22) 78%,
+    rgba(203, 182, 255, 0) 100%
+  );
+}
+
+/* dock scroller on mobile */
+.no-bar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-bar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---- CSS galaxy: shown when WebGL is unavailable ---- */
+.css-galaxy {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(38% 26% at 62% 56%, rgba(255, 233, 202, 0.5) 0%, rgba(255, 210, 160, 0.16) 34%, rgba(5, 3, 10, 0) 68%),
+    radial-gradient(70% 46% at 62% 56%, rgba(124, 92, 255, 0.3) 0%, rgba(90, 60, 190, 0.12) 46%, rgba(5, 3, 10, 0) 76%),
+    radial-gradient(120% 80% at 20% 14%, rgba(192, 132, 252, 0.13) 0%, rgba(5, 3, 10, 0) 60%),
+    radial-gradient(90% 70% at 88% 82%, rgba(110, 231, 183, 0.08) 0%, rgba(5, 3, 10, 0) 58%),
+    var(--void);
+}
+
+.css-galaxy::after {
+  content: "";
+  position: absolute;
+  inset: -10%;
+  background-image:
+    radial-gradient(1.4px 1.4px at 12% 22%, rgba(255, 255, 255, 0.8) 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 74% 18%, rgba(214, 228, 255, 0.7) 50%, transparent 51%),
+    radial-gradient(1px 1px at 33% 71%, rgba(255, 244, 224, 0.7) 50%, transparent 51%),
+    radial-gradient(1.6px 1.6px at 88% 61%, rgba(255, 255, 255, 0.6) 50%, transparent 51%),
+    radial-gradient(1px 1px at 55% 40%, rgba(255, 255, 255, 0.5) 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 22% 88%, rgba(203, 182, 255, 0.6) 50%, transparent 51%),
+    radial-gradient(1px 1px at 65% 92%, rgba(255, 255, 255, 0.45) 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 92% 30%, rgba(255, 236, 210, 0.55) 50%, transparent 51%);
+  background-size: 100% 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
