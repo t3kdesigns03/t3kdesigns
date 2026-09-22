@@ -44,10 +44,15 @@ html {
   background: var(--void);
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  /* a single element sticking out past the viewport makes mobile Safari
+     shrink the whole page to fit; clip instead of scroll so it cannot */
+  overflow-x: clip;
 }
 
 body {
   background: var(--void);
+  overflow-x: clip;
+  -webkit-tap-highlight-color: transparent;
   color: var(--ice);
   font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   font-weight: 300;
@@ -74,7 +79,9 @@ body {
   width: 100%;
   max-width: var(--shell);
   margin-inline: auto;
-  padding-inline: clamp(1.25rem, 5vw, 3rem);
+  /* respect the notch in landscape, where the inset is on the sides */
+  padding-left: max(clamp(1.25rem, 5vw, 3rem), env(safe-area-inset-left));
+  padding-right: max(clamp(1.25rem, 5vw, 3rem), env(safe-area-inset-right));
 }
 
 .glass {
@@ -93,7 +100,8 @@ body {
   font-size: 0.8125rem;
   letter-spacing: 0.04em;
   line-height: 1;
-  padding: 0.9rem 1.5rem;
+  padding: 0.95rem 1.5rem;
+  min-height: 44px;
   transition: background 320ms ease, border-color 320ms ease, color 320ms ease,
     box-shadow 320ms ease, transform 320ms ease;
   will-change: transform;
@@ -123,6 +131,23 @@ body {
   background: rgba(24, 14, 46, 0.68);
   border-color: rgba(203, 182, 255, 0.3);
   color: var(--ice);
+}
+
+/* Tap size follows the input device, not the breakpoint: a landscape
+   phone is 844px wide and still needs a 44px target. */
+.nav-target {
+  /* deliberately no `display`: this rule sits outside Tailwind's layers and
+     would otherwise beat `hidden`, which is what keeps Explore off phones */
+  align-items: center;
+  border-radius: 999px;
+  padding-block: 0.5rem;
+}
+
+@media (pointer: coarse) {
+  .nav-target {
+    min-height: 44px;
+    padding-block: 0;
+  }
 }
 
 .eyebrow {
@@ -192,6 +217,43 @@ body {
   );
 }
 
+.field {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid var(--stroke);
+  background: rgba(232, 228, 255, 0.03);
+  padding: 0.75rem 1rem;
+  /* 16px exactly: anything smaller makes iOS Safari zoom on focus */
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--ice);
+  outline: none;
+  transition: border-color 260ms ease;
+}
+
+.field::placeholder {
+  color: rgba(232, 228, 255, 0.24);
+}
+
+.field:focus {
+  border-color: rgba(203, 182, 255, 0.4);
+}
+
+/* secondary inline links still need a thumb-sized hit area */
+.inline-link {
+  display: inline-block;
+  padding-block: 0.4rem;
+  color: var(--lilac);
+  text-decoration: underline;
+  text-decoration-color: rgba(203, 182, 255, 0.3);
+  text-underline-offset: 4px;
+  transition: color 260ms ease;
+}
+
+.inline-link:hover {
+  color: var(--ice);
+}
+
 .hairline {
   height: 1px;
   background: linear-gradient(
@@ -239,6 +301,35 @@ body {
     radial-gradient(1px 1px at 65% 92%, rgba(255, 255, 255, 0.45) 50%, transparent 51%),
     radial-gradient(1.4px 1.4px at 92% 30%, rgba(255, 236, 210, 0.55) 50%, transparent 51%);
   background-size: 100% 100%;
+}
+
+/* Landscape phones: ~390px of height. Everything that matters — the
+   headline, the sentence and both calls to action — has to fit above the
+   fold without shrinking the type into illegibility. */
+@media (max-height: 540px) and (orientation: landscape) {
+  .hero-shell {
+    padding-top: 4.25rem;
+    padding-bottom: 1.5rem;
+  }
+  .hero-shell h1 {
+    font-size: clamp(1.875rem, 4.6vw, 2.75rem);
+  }
+  .hero-shell .eyebrow {
+    font-size: 0.625rem;
+  }
+  .hero-shell .verbatim {
+    margin-top: 1.25rem;
+    font-size: clamp(1.0625rem, 2.2vw, 1.5rem);
+  }
+  .hero-shell p {
+    margin-top: 0.85rem;
+  }
+  .hero-cta {
+    margin-top: 1.35rem;
+  }
+  .hero-hint {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

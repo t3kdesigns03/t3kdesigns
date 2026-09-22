@@ -10,7 +10,7 @@ export default function Studio() {
   return (
     <section
       id="studio"
-      className="pointer-events-none relative flex min-h-[85svh] items-center py-28"
+      className="pointer-events-none relative flex min-h-[85svh] items-center overflow-x-clip py-24 sm:py-28"
     >
       <div className="shell relative w-full">
         <motion.div
@@ -22,7 +22,7 @@ export default function Studio() {
         >
           <div
             aria-hidden
-            className="copy-veil pointer-events-none absolute -inset-x-16 -inset-y-20"
+            className="copy-veil pointer-events-none absolute -inset-x-6 -inset-y-14 sm:-inset-x-16 sm:-inset-y-20"
           />
           <div className="relative">
           <p className="eyebrow">Studio</p>

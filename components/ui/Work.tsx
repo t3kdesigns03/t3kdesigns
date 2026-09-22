@@ -91,7 +91,7 @@ export default function Work() {
                         </span>
                         <StatusPill status={p.status} />
                       </span>
-                      <span className="mt-1 block truncate text-[0.8125rem] text-dim">
+                      <span className="mt-1 line-clamp-2 text-[0.8125rem] text-dim sm:line-clamp-1">
                         {p.oneLiner}
                       </span>
                     </span>

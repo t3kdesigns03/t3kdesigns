@@ -20,13 +20,13 @@ export default function Hero() {
   return (
     <section
       id="top"
-      className="pointer-events-none relative flex min-h-[100svh] items-center"
+      className="pointer-events-none relative flex min-h-[100svh] items-start sm:items-center"
     >
       <div
         aria-hidden
         className="hero-scrim pointer-events-none absolute inset-0"
       />
-      <div className="shell relative grid w-full grid-cols-12 pt-28 pb-32 sm:pt-24">
+      <div className="hero-shell shell relative grid w-full grid-cols-12 pt-[15svh] pb-36 sm:pt-24 sm:pb-32">
         <div className="col-span-12 max-w-[42rem] lg:col-span-7 xl:col-span-6">
           <motion.p
             custom={0}
@@ -73,7 +73,7 @@ export default function Hero() {
             variants={rise}
             initial="hidden"
             animate="show"
-            className="mt-11 flex flex-wrap items-center gap-3"
+            className="hero-cta mt-11 flex flex-wrap items-center gap-3"
           >
             <a href="#work" className="pill pill-primary pointer-events-auto">
               See the work
@@ -89,7 +89,7 @@ export default function Hero() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1.4, delay: 1.5 }}
-        className="absolute inset-x-0 bottom-7 text-center text-[0.625rem] uppercase tracking-[0.3em] text-[rgba(232,228,255,0.3)]"
+        className="hero-hint absolute inset-x-0 bottom-7 text-center text-[0.625rem] uppercase tracking-[0.3em] text-[rgba(232,228,255,0.3)]"
       >
         {explore ? "drag to drift" : `scroll to enter the system`}
       </motion.p>

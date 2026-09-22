@@ -102,7 +102,12 @@ export default function PointLayer({
         fragmentShader={mode === "dust" ? dustFrag : starFrag}
         transparent
         depthWrite={false}
-        depthTest={false}
+        /* depth testing matters now that the traffic layer puts real solids
+           in the scene: three draws every opaque mesh before any transparent
+           one regardless of renderOrder, so without this the galaxy would
+           paint straight over the planets. Nothing writes depth among the
+           point layers themselves, so the galaxy renders exactly as before. */
+        depthTest
         blending={mode === "dust" ? THREE.CustomBlending : THREE.AdditiveBlending}
         blendEquation={THREE.AddEquation}
         blendSrc={mode === "dust" ? THREE.ZeroFactor : THREE.SrcAlphaFactor}

@@ -153,7 +153,7 @@ function Cluster({
           fragmentShader={starFrag}
           transparent
           depthWrite={false}
-          depthTest={false}
+          depthTest
           blending={THREE.AdditiveBlending}
         />
       </points>

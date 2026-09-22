@@ -127,7 +127,7 @@ export default function Contact() {
                   value={f.want}
                   onChange={set("want")}
                   placeholder="A site, an app, a tool nobody has built yet…"
-                  className="w-full resize-y rounded-xl border border-[var(--stroke)] bg-[rgba(232,228,255,0.03)] px-4 py-3 text-[0.9375rem] text-ice outline-none transition-colors placeholder:text-[rgba(232,228,255,0.24)] focus:border-[rgba(203,182,255,0.4)]"
+                  className="field resize-y"
                 />
               </div>
 
@@ -149,7 +149,7 @@ export default function Contact() {
                   or write to{" "}
                   <a
                     href={`mailto:${SITE.email}`}
-                    className="text-lilac underline decoration-[rgba(203,182,255,0.3)] underline-offset-4 transition-colors hover:text-ice"
+                    className="inline-link"
                   >
                     {SITE.email}
                   </a>
@@ -162,7 +162,7 @@ export default function Contact() {
                   href={SITE.xUrl}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="text-lilac underline decoration-[rgba(203,182,255,0.3)] underline-offset-4 transition-colors hover:text-ice"
+                  className="inline-link"
                 >
                   {SITE.x}
                 </a>
@@ -197,7 +197,7 @@ function Field({
         id={id}
         name={id}
         type={type}
-        className="w-full rounded-xl border border-[var(--stroke)] bg-[rgba(232,228,255,0.03)] px-4 py-3 text-[0.9375rem] text-ice outline-none transition-colors placeholder:text-[rgba(232,228,255,0.24)] focus:border-[rgba(203,182,255,0.4)]"
+        className="field"
         {...rest}
       />
     </div>

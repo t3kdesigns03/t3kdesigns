@@ -108,7 +108,7 @@ function Cloud({ cloud, frozen }: { cloud: Cloud; frozen: boolean }) {
         fragmentShader={nebulaFrag}
         transparent
         depthWrite={false}
-        depthTest={false}
+        depthTest
         blending={THREE.AdditiveBlending}
       />
     </mesh>

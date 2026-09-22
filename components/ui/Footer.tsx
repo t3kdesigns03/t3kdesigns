@@ -2,7 +2,7 @@ import { SITE } from "@/lib/theme";
 
 export default function Footer() {
   return (
-    <footer className="pointer-events-none relative pb-10 pt-4">
+    <footer className="pointer-events-none relative pt-4 pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
       <div className="shell">
         <div className="hairline" />
         <p className="pointer-events-auto mt-6 text-center text-[0.75rem] tracking-[0.02em] text-[rgba(232,228,255,0.42)]">

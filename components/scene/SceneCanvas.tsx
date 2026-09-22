@@ -16,6 +16,7 @@ import Galaxy from "./Galaxy";
 import Nebulae from "./Nebulae";
 import ProjectNodes from "./ProjectNodes";
 import Starfield from "./Starfield";
+import Traffic from "./traffic/Traffic";
 import { TIERS, detectTier, type Tier } from "./perf";
 import { useMedia, useReducedMotion } from "@/lib/motion";
 import { sceneStore, useScene } from "@/lib/store";
@@ -76,12 +77,17 @@ export default function SceneCanvas() {
         inset: 0,
         opacity: ready ? 1 : 0,
         transition: "opacity 1200ms ease",
+        /* r3f defaults this to "none", which would swallow every vertical
+           swipe that starts over the canvas — i.e. most of a phone screen —
+           and leave the page unscrollable. */
+        touchAction: "pan-y",
       }}
     >
       <Nebulae count={cfg.nebulae} frozen={frozen} />
       <Starfield count={cfg.stars} frozen={frozen} />
       <Galaxy cfg={cfg} frozen={frozen} />
       <ProjectNodes count={cfg.nodeStars} frozen={frozen} />
+      <Traffic cfg={cfg} frozen={frozen} mobile={mobile} />
 
       <CameraRig frozen={frozen} mobile={mobile} explore={explore} />
       {!reduced && <AdaptivePerf onDrop={drop} />}

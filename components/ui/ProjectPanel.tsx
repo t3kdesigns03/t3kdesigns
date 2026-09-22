@@ -54,7 +54,7 @@ export default function ProjectPanel() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: "100%", opacity: 0.2 }}
             transition={{ duration: 0.55, ease: EASE }}
-            className="glass fixed inset-y-0 right-0 z-50 flex w-full max-w-[26.5rem] flex-col overflow-y-auto border-l px-7 pb-10 pt-7 sm:px-8"
+            className="glass fixed inset-y-0 right-0 z-50 flex w-full max-w-[26.5rem] flex-col overflow-y-auto overscroll-contain border-l px-6 pb-[calc(2.5rem+env(safe-area-inset-bottom))] pt-[calc(1.75rem+env(safe-area-inset-top))] sm:px-8"
           >
             <div className="flex items-start justify-between gap-4">
               <span
@@ -69,7 +69,7 @@ export default function ProjectPanel() {
                 ref={closeRef}
                 type="button"
                 onClick={() => sceneStore.setActive(null)}
-                className="-mr-2 -mt-1 rounded-full px-3 py-2 text-[0.6875rem] uppercase tracking-[0.2em] text-lilac-dim transition-colors hover:text-ice"
+                className="-mr-2 -mt-1 flex min-h-[44px] items-center rounded-full px-3 text-[0.6875rem] uppercase tracking-[0.2em] text-lilac-dim transition-colors hover:text-ice"
               >
                 close
               </button>
