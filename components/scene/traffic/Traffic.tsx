@@ -7,6 +7,7 @@ import Ships, { buildShips } from "./Ships";
 import TrafficPoints from "./TrafficPoints";
 import Worlds from "./Worlds";
 import { PointPool } from "./pointPool";
+import { layout } from "./anchors";
 import type { TierConfig } from "../perf";
 
 /**
@@ -22,20 +23,36 @@ export default function Traffic({
   cfg,
   frozen,
   mobile,
+  lean,
 }: {
   cfg: TierConfig;
   frozen: boolean;
   mobile: boolean;
+  /** the perf watchdog fired — trim traffic, keep the worlds */
+  lean: boolean;
 }) {
   const pool = useMemo(() => new PointPool(760), []);
 
-  const shipCount = mobile ? Math.min(cfg.ships, 5) : cfg.ships;
+  /**
+   * Mobile is not a cut-down scene, it is a differently framed one. The
+   * camera sits much further out so the whole node ring fits a portrait
+   * frustum, which means bodies, hulls and lights all have to come up in
+   * size to stay legible. Set before children render.
+   */
+  layout.worldScale = mobile ? 2.3 : 1;
+
+  const shipCount = mobile ? (lean ? 3 : 5) : cfg.ships;
   const crewMax = mobile ? 0 : cfg.crew;
+  const pointScale = mobile ? 2.6 : 1;
+  const glow = mobile ? 1.7 : 1;
+  // on a phone every ship should be working the visible ring, not making a
+  // twenty-second run to a planet that is off-frame
+  const allowOuter = !mobile && cfg.outerPlanets > 0;
+  const outerCount = mobile ? 1 : cfg.outerPlanets;
 
   const ships = useMemo(
-    () =>
-      buildShips(pool, shipCount, cfg.trail, cfg.outerPlanets > 0, frozen),
-    [pool, shipCount, cfg.trail, cfg.outerPlanets, frozen],
+    () => buildShips(pool, shipCount, cfg.trail, allowOuter, frozen, mobile),
+    [pool, shipCount, cfg.trail, allowOuter, frozen, mobile],
   );
 
   return (
@@ -56,7 +73,7 @@ export default function Traffic({
         pool={pool}
         frozen={frozen}
         segments={cfg.worldSegments}
-        outerCount={cfg.outerPlanets}
+        outerCount={outerCount}
       />
 
       <Satellites
@@ -73,14 +90,16 @@ export default function Traffic({
         ships={ships}
         meshes={cfg.shipMeshes}
         trail={cfg.trail}
-        allowOuter={cfg.outerPlanets > 0}
+        allowOuter={allowOuter}
+        minPx={mobile ? 6 : 3.2}
+        pointScale={pointScale}
       />
 
       {crewMax > 0 && !frozen && (
         <Crew pool={pool} ships={ships} max={crewMax} />
       )}
 
-      <TrafficPoints pool={pool} />
+      <TrafficPoints pool={pool} sizeScale={pointScale} glow={glow} />
     </>
   );
 }

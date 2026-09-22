@@ -4,7 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { hexToRGB, srand } from "../color";
-import { projectAnchorList, type Anchor } from "./anchors";
+import { dockR, layout, projectAnchorList, type Anchor } from "./anchors";
 import type { PointPool } from "./pointPool";
 
 type Sat = {
@@ -40,11 +40,11 @@ function build(nodes: number, per: number, pool: PointPool): Sat[] {
       );
       out.push({
         anchor,
-        radius: anchor.dockR * (1.35 + srand(s * 2.2) * 0.95),
+        radius: dockR(anchor) * (1.35 + srand(s * 2.2) * 0.95),
         period: 17 + srand(s * 6.1) * 31,
         phase: srand(s * 8.9) * Math.PI * 2,
         quat: new THREE.Quaternion().setFromEuler(e),
-        scale: 0.016 + srand(s * 11.7) * 0.016,
+        scale: (0.016 + srand(s * 11.7) * 0.016) * layout.worldScale,
         shape: srand(s * 13.3) > 0.5 ? 1 : 0,
         rgb: hexToRGB(anchor.accent),
         slot: pool.allocNamed(`sat:${anchor.id}:${i}`, 1),

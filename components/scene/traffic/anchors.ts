@@ -6,6 +6,14 @@ import { OUTER, WORLDS, dockRadius, type WorldDef } from "./worlds";
 export const HUB_ID = "t3kdesigns";
 
 /**
+ * Bodies are drawn larger on a phone. A planet that reads at 30px on a
+ * desktop is 9px on a portrait phone, which is why mobile looked empty —
+ * so the whole layer multiplies through this one number, set by <Traffic>
+ * before its children render. Positions are untouched; only sizes change.
+ */
+export const layout = { worldScale: 1 };
+
+/**
  * Every destination in the traffic layer, project or scenery, resolved to
  * one place. Project worlds read their position straight off nodeSpots —
  * the same array the 3D constellation and the mission dock already use, so
@@ -17,7 +25,8 @@ export type Anchor = {
   position: THREE.Vector3;
   /** orientation of the dock ring / equatorial plane */
   quat: THREE.Quaternion;
-  dockR: number;
+  /** unscaled dock radius; read it through dockR() */
+  baseDockR: number;
   accent: string;
   isProject: boolean;
 };
@@ -40,7 +49,7 @@ const projectAnchors: Anchor[] = nodeSpots
       def,
       position: new THREE.Vector3(...s.position),
       quat: orientation(i + 1),
-      dockR: dockRadius(def),
+      baseDockR: dockRadius(def),
       accent: s.color,
       isProject: true,
     };
@@ -51,12 +60,15 @@ const outerAnchors: Anchor[] = OUTER.map((o, i) => ({
   def: o,
   position: new THREE.Vector3(...o.position),
   quat: orientation(i + 40),
-  dockR: o.radius * 1.6,
+  baseDockR: o.radius * 1.6,
   accent: o.atmo,
   isProject: false,
 }));
 
 export const anchors: Anchor[] = [...projectAnchors, ...outerAnchors];
+
+/** Dock radius in world units, at the current layout scale. */
+export const dockR = (a: Anchor) => a.baseDockR * layout.worldScale;
 export const projectAnchorList = projectAnchors;
 export const outerAnchorList = outerAnchors;
 
@@ -76,7 +88,7 @@ export function ringPoint(
 ) {
   out
     .set(Math.cos(angle), 0, Math.sin(angle))
-    .multiplyScalar(a.dockR * radiusScale)
+    .multiplyScalar(dockR(a) * radiusScale)
     .applyQuaternion(a.quat)
     .add(a.position);
   return out;
@@ -103,5 +115,7 @@ export function ringNormal(a: Anchor, out = new THREE.Vector3()) {
 /** The night side of a body, given the core at the origin lights it. */
 export function nightPoint(a: Anchor, scale = 0.94, out = new THREE.Vector3()) {
   _v.copy(a.position).normalize();
-  return out.copy(a.position).addScaledVector(_v, a.def.radius * scale);
+  return out
+    .copy(a.position)
+    .addScaledVector(_v, a.def.radius * layout.worldScale * scale);
 }

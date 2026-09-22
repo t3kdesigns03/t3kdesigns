@@ -6,6 +6,8 @@ import * as THREE from "three";
 import { hexToRGB } from "../color";
 import { ringFrag, ringVert, worldFrag, worldVert } from "../shaders/world";
 import {
+  dockR,
+  layout,
   nightPoint,
   outerAnchorList,
   projectAnchorList,
@@ -59,7 +61,7 @@ function Body({
   });
 
   return (
-    <group position={anchor.position}>
+    <group position={anchor.position} scale={layout.worldScale}>
       <mesh ref={mesh} rotation={[d.tilt, 0, 0]} renderOrder={4}>
         <sphereGeometry args={[d.radius, segments[0], segments[1]]} />
         <shaderMaterial
@@ -82,8 +84,10 @@ function PlanetRing({ anchor }: { anchor: Anchor }) {
     () => ({
       uColor: { value: new THREE.Color(r.color) },
       uCenter: { value: anchor.position.clone() },
-      uInner: { value: r.inner },
-      uOuter: { value: r.outer },
+      // the mesh is inside a scaled group, so these world-space radii
+      // have to be scaled to match what the fragment shader measures
+      uInner: { value: r.inner * layout.worldScale },
+      uOuter: { value: r.outer * layout.worldScale },
       uSeed: { value: (anchor.id.length * 7.3) % 11 },
       uOpacity: { value: r.opacity },
     }),
@@ -223,7 +227,9 @@ function DockRing({
 
   return (
     <mesh position={anchor.position} rotation={rot} renderOrder={5}>
-      <torusGeometry args={[anchor.dockR, 0.0042, 5, 72]} />
+      <torusGeometry
+        args={[dockR(anchor), 0.0042 * layout.worldScale, 5, 72]}
+      />
       <meshStandardMaterial
         color="#262030"
         metalness={0.25}

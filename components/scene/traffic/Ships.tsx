@@ -46,6 +46,7 @@ export function buildShips(
   trail: number,
   allowOuter: boolean,
   frozen: boolean,
+  brisk = false,
 ): Ship[] {
   const out: Ship[] = [];
   for (let i = 0; i < count; i++) {
@@ -59,7 +60,8 @@ export function buildShips(
       route,
       // spread them along their routes so nothing launches in formation
       t: frozen ? 1 : Math.random(),
-      speed: (hull === 2 ? 1.05 : 1.35) + Math.random() * 0.75,
+      speed:
+        ((hull === 2 ? 1.05 : 1.35) + Math.random() * 0.75) * (brisk ? 1.35 : 1),
       docked: frozen ? route.to : null,
       dwell: frozen ? Infinity : 2 + Math.random() * 6,
       trailBase: pool.allocNamed(`trail:${i}`, trail),
@@ -79,6 +81,10 @@ type Props = {
   meshes: boolean;
   trail: number;
   allowOuter: boolean;
+  /** floor on a hull's on-screen length, in CSS pixels */
+  minPx: number;
+  /** multiplies engine and nav-light point sizes */
+  pointScale: number;
 };
 
 export default function Ships({
@@ -88,6 +94,8 @@ export default function Ships({
   meshes,
   trail,
   allowOuter,
+  minPx,
+  pointScale,
 }: Props) {
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
   const size = useThree((s) => s.size);
@@ -126,10 +134,14 @@ export default function Ships({
   const scl = useRef(new THREE.Vector3());
   const lastActive = useRef<string | null>(null);
 
-  /** Ships live in the far background; they must never vanish or loom. */
+  /**
+   * Ships live in the far background; they must never vanish or loom. The
+   * floor is what makes a courier legible on a phone, where the camera sits
+   * three times further out than it does on a desktop.
+   */
   const clampedScale = (distance: number, len: number) => {
     const k = size.height / (2 * Math.tan((camera.fov * Math.PI) / 360));
-    const minWorld = (3.2 * distance) / k;
+    const minWorld = (minPx * distance) / k;
     const maxWorld = (26 * distance) / k;
     return Math.min(maxWorld, Math.max(minWorld, len));
   };
@@ -218,7 +230,7 @@ export default function Ships({
           NAV_ICE[0],
           NAV_ICE[1],
           NAV_ICE[2],
-          meshes ? 1.5 : 2.4,
+          (meshes ? 1.5 : 2.4) * pointScale,
           steady * (meshes ? 0.85 : 1.0),
         );
         tmp.current.copy(pos.current).addScaledVector(tan.current, -half);
@@ -230,7 +242,7 @@ export default function Ships({
           NAV_WARM[0],
           NAV_WARM[1],
           NAV_WARM[2],
-          meshes ? 1.25 : 1.9,
+          (meshes ? 1.25 : 1.9) * pointScale,
           steady * (meshes ? 0.7 : 0.85),
         );
       }
@@ -258,7 +270,7 @@ export default function Ships({
               s.trailRgb[0],
               s.trailRgb[1],
               s.trailRgb[2],
-              0.55 + age * 1.9,
+              (0.55 + age * 1.9) * pointScale,
               age * age * 0.8,
             );
           }

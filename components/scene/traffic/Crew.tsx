@@ -4,7 +4,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { hexToRGB } from "../color";
-import { ringNormal, ringPoint } from "./anchors";
+import { layout, ringNormal, ringPoint } from "./anchors";
 import { SHUTTLE, type Ship } from "./Ships";
 import type { PointPool } from "./pointPool";
 
@@ -25,7 +25,7 @@ type Walker = {
   rgb: [number, number, number];
 };
 
-const HEIGHT = 0.026;
+const BASE_HEIGHT = 0.026;
 const PHASE_LEN = [0, 0.7, 4.2, 2.6, 3.1, 0.7];
 
 export default function Crew({
@@ -38,6 +38,7 @@ export default function Crew({
   max: number;
 }) {
   const camera = useThree((s) => s.camera);
+  const HEIGHT = BASE_HEIGHT * layout.worldScale;
 
   const walkers = useMemo<Walker[]>(() => {
     const shuttles = ships.filter((s) => s.hull === SHUTTLE);

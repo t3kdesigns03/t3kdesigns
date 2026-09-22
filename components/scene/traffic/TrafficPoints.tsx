@@ -11,19 +11,28 @@ import type { PointPool } from "./pointPool";
  * existing star shader so a nav light is lit by the same maths as a star —
  * the traffic has to look like it belongs to this galaxy, not like decals.
  */
-export default function TrafficPoints({ pool }: { pool: PointPool }) {
+export default function TrafficPoints({
+  pool,
+  sizeScale = 1,
+  glow = 1,
+}: {
+  pool: PointPool;
+  sizeScale?: number;
+  /** brightness multiplier — bloom is off on phones, so lights carry it */
+  glow?: number;
+}) {
   const mat = useRef<THREE.ShaderMaterial>(null);
   const gl = useThree((s) => s.gl);
 
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
-      uSize: { value: 16 },
+      uSize: { value: 16 * sizeScale },
       uPixelRatio: { value: gl.getPixelRatio() },
       uRotSpeed: { value: 0 },
       uShear: { value: 0 },
       uTwinkle: { value: 0 },
-      uFade: { value: 1 },
+      uFade: { value: glow },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],

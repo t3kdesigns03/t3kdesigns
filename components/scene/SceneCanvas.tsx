@@ -29,6 +29,7 @@ export default function SceneCanvas() {
   const [tier, setTier] = useState<Tier>(detectTier);
   const [bloom, setBloom] = useState(true);
   const [awake, setAwake] = useState(true);
+  const [lean, setLean] = useState(false);
   const [ready, setReady] = useState(false);
 
   // never burn a GPU on a tab nobody is looking at
@@ -43,8 +44,11 @@ export default function SceneCanvas() {
     if (mobile) sceneStore.setExplore(false);
   }, [mobile]);
 
+  // Frames are dropping: shed bloom, shed particles, shed a couple of
+  // ships. Worlds are never shed — an empty sky was the bug.
   const drop = useCallback(() => {
     setBloom(false);
+    setLean(true);
     setTier((t) => (t > 0 ? ((t - 1) as Tier) : t));
   }, []);
 
@@ -87,7 +91,7 @@ export default function SceneCanvas() {
       <Starfield count={cfg.stars} frozen={frozen} />
       <Galaxy cfg={cfg} frozen={frozen} />
       <ProjectNodes count={cfg.nodeStars} frozen={frozen} />
-      <Traffic cfg={cfg} frozen={frozen} mobile={mobile} />
+      <Traffic cfg={cfg} frozen={frozen} mobile={mobile} lean={lean} />
 
       <CameraRig frozen={frozen} mobile={mobile} explore={explore} />
       {!reduced && <AdaptivePerf onDrop={drop} />}
@@ -109,7 +113,7 @@ export default function SceneCanvas() {
         />
       )}
 
-      {bloom && !reduced && (
+      {bloom && !reduced && !mobile && (
         <EffectComposer multisampling={0} enableNormalPass={false}>
           <Bloom
             mipmapBlur

@@ -37,12 +37,19 @@ export default function CameraRig({
     () =>
       mobile
         ? {
-            from: v3(0, -2.3, 10.9),
-            to: v3(1.7, 4.7, 11.8),
-            lookFrom: v3(0, 3.75, 0),
-            lookTo: v3(0, 0.35, 0),
+            /**
+             * A portrait frustum is narrow: at the desktop distance the node
+             * ring falls entirely outside it and the phone showed the spiral
+             * alone. Standing well back and looking down at ~26 degrees puts
+             * all eight systems on screen, below the copy, with the disk as
+             * a backdrop instead of a cropped subject.
+             */
+            from: v3(-24.1, 15.34, -20.22),
+            to: v3(-21.0, 20.0, -18.0),
+            lookFrom: v3(0, 6.5, 0),
+            lookTo: v3(0, 4.0, 0),
             fovFrom: 62,
-            fovTo: 52,
+            fovTo: 56,
           }
         : {
             from: v3(0.1, -2.35, 11.0),
@@ -92,8 +99,9 @@ export default function CameraRig({
     let oy: number;
     if (mobile) {
       const t = state.clock.elapsedTime;
-      ox = Math.sin(t * 0.058) * 0.55;
-      oy = Math.cos(t * 0.043) * 0.3;
+      // authored drift, scaled to the distance so it still reads as parallax
+      ox = Math.sin(t * 0.058) * 1.5;
+      oy = Math.cos(t * 0.043) * 0.85;
     } else {
       ox = state.pointer.x * 0.62;
       oy = state.pointer.y * 0.4;

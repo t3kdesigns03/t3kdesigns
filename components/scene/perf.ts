@@ -43,12 +43,15 @@ export const TIERS: Record<Tier, TierConfig> = {
     satelliteNodes: 4, satellitesPer: 1, satelliteMeshes: true,
     crew: 0, outerPlanets: 2, worldSegments: [32, 20],
   },
+  // A phone can draw eight small spheres and five instanced hulls. What it
+  // cannot afford is the full particle + bloom + crew stack, so those are
+  // the knobs that move — worlds and hulls stay on at every tier.
   0: {
     disk: 42000, bulge: 9500, dust: 9000, stars: 4200, nodeStars: 210,
-    nebulae: 3, dpr: 1,
-    ships: 3, shipMeshes: false, trail: 4,
-    satelliteNodes: 1, satellitesPer: 1, satelliteMeshes: false,
-    crew: 0, outerPlanets: 1, worldSegments: [24, 16],
+    nebulae: 3, dpr: 1.25,
+    ships: 5, shipMeshes: true, trail: 6,
+    satelliteNodes: 4, satellitesPer: 1, satelliteMeshes: true,
+    crew: 0, outerPlanets: 1, worldSegments: [28, 18],
   },
 };
 
