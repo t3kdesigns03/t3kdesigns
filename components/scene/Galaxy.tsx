@@ -197,9 +197,16 @@ function buildDust(count: number): Attribs {
 export default function Galaxy({
   cfg,
   frozen,
+  sizeScale = 1,
 }: {
   cfg: TierConfig;
   frozen: boolean;
+  /**
+   * Point sizes attenuate with distance, so a galaxy drawn S times bigger
+   * and S times further away needs S times the point size to look the same.
+   * /explore uses this to hang the homepage spiral in the sky.
+   */
+  sizeScale?: number;
 }) {
   const disk = useMemo(() => buildDisk(cfg.disk), [cfg.disk]);
   const bulge = useMemo(() => buildBulge(cfg.bulge), [cfg.bulge]);
@@ -209,7 +216,7 @@ export default function Galaxy({
     <group rotation={[0, 0, 0.055]}>
       <PointLayer
         attribs={bulge}
-        uSize={10}
+        uSize={10 * sizeScale}
         rotSpeed={0.055}
         shear={0.05}
         renderOrder={0}
@@ -217,7 +224,7 @@ export default function Galaxy({
       />
       <PointLayer
         attribs={disk}
-        uSize={11.5}
+        uSize={11.5 * sizeScale}
         rotSpeed={0.05}
         shear={0.2}
         twinkle={0.05}
@@ -226,7 +233,7 @@ export default function Galaxy({
       />
       <PointLayer
         attribs={dust}
-        uSize={125}
+        uSize={125 * sizeScale}
         rotSpeed={0.05}
         shear={0.2}
         mode="dust"

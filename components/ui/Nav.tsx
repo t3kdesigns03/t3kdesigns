@@ -2,7 +2,8 @@
 
 import { EASE } from "@/lib/motion";
 import { motion } from "framer-motion";
-import { useScene, sceneStore } from "@/lib/store";
+import Link from "next/link";
+import { useScene } from "@/lib/store";
 
 const links = [
   { href: "#work", label: "work" },
@@ -11,7 +12,6 @@ const links = [
 ];
 
 export default function Nav() {
-  const explore = useScene((s) => s.explore);
   const failed = useScene((s) => s.webglFailed);
 
   return (
@@ -49,22 +49,18 @@ export default function Nav() {
         </ul>
 
         {!failed && (
-          <button
-            type="button"
-            onClick={() => sceneStore.toggleExplore()}
-            aria-pressed={explore}
-            className="nav-target ml-1 hidden gap-2 border border-[var(--stroke)] px-3.5 text-[0.6875rem] uppercase tracking-[0.16em] text-lilac-dim transition-colors hover:border-[rgba(203,182,255,0.32)] hover:text-ice sm:flex"
+          // no prefetch: the homepage must never download the game
+          <Link
+            href="/explore"
+            prefetch={false}
+            className="nav-target group ml-1 hidden gap-2 border border-[var(--stroke)] px-3.5 text-[0.6875rem] uppercase tracking-[0.16em] text-lilac-dim transition-colors hover:border-[rgba(203,182,255,0.32)] hover:text-ice sm:flex"
           >
             <span
               aria-hidden
-              className="size-[5px] rounded-full transition-all duration-500"
-              style={{
-                background: explore ? "var(--good)" : "var(--lilac-dim)",
-                boxShadow: explore ? "0 0 10px 1px rgba(110,231,183,0.8)" : "none",
-              }}
+              className="size-[5px] rounded-full bg-[var(--lilac-dim)] transition-colors duration-500 group-hover:bg-[var(--lilac)]"
             />
             explore
-          </button>
+          </Link>
         )}
       </nav>
     </motion.header>

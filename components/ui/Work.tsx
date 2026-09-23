@@ -2,6 +2,7 @@
 
 import { EASE } from "@/lib/motion";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { projects } from "@/lib/projects";
 import { sceneStore, useScene } from "@/lib/store";
 import StatusPill from "./StatusPill";
@@ -33,6 +34,11 @@ export default function Work() {
               ? "Eight systems, one studio. Pick one."
               : "Eight systems orbiting one studio. Touch a light out there, or read them straight."}
           </p>
+          {!failed && (
+            <Link href="/explore" prefetch={false} className="pill pill-ghost mt-6">
+              Fly between them →
+            </Link>
+          )}
         </motion.div>
 
         {/* mission dock */}

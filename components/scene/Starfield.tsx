@@ -55,9 +55,12 @@ function build(count: number): Attribs {
 export default function Starfield({
   count,
   frozen,
+  sizeScale = 1,
 }: {
   count: number;
   frozen: boolean;
+  /** see Galaxy — lets /explore push the shell out past every planet */
+  sizeScale?: number;
 }) {
   const attribs = useMemo(() => build(count), [count]);
   const group = useRef<THREE.Group>(null);
@@ -72,7 +75,7 @@ export default function Starfield({
     <group ref={group}>
       <PointLayer
         attribs={attribs}
-        uSize={140}
+        uSize={140 * sizeScale}
         rotSpeed={0}
         shear={0}
         twinkle={0.1}

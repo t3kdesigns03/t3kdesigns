@@ -17,7 +17,12 @@ const eslintConfig = defineConfig([
     // A render loop is imperative by design. Every frame we write into the
     // camera, material uniforms and pre-allocated vectors held in refs —
     // allocating fresh objects 60 times a second is the bug, not the fix.
-    files: ["components/scene/**/*.ts", "components/scene/**/*.tsx"],
+    files: [
+      "components/scene/**/*.ts",
+      "components/scene/**/*.tsx",
+      "components/explore/**/*.ts",
+      "components/explore/**/*.tsx",
+    ],
     rules: {
       "react-hooks/immutability": "off",
     },
