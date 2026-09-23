@@ -35,7 +35,9 @@ function frameOrbit(
   const halfV = THREE.MathUtils.degToRad(camera.fov / 2);
   const halfH = Math.atan(Math.tan(halfV) * aspect);
   // planet's angular diameter: a third of the height, or 62% of a narrow width
-  const diam = Math.min((2 * halfV) / 3, 0.62 * 2 * halfH);
+  // shorter windows give the nameplate a little more room
+  const share = size.height < 760 ? 0.28 : 1 / 3;
+  const diam = Math.min(2 * halfV * share, 0.62 * 2 * halfH);
   const zoom = camDist / defaultCam();
   const Dp = Math.max((b.radius / Math.sin(diam / 2)) * zoom, b.orbitR * 1.3);
 
@@ -46,7 +48,7 @@ function frameOrbit(
   const e = ELEVATION;
   const R = b.orbitR;
   const craftBelow = Math.atan2(Dp * Math.sin(e), Dp * Math.cos(e) - R);
-  const tilt = THREE.MathUtils.clamp(craftBelow - halfV * 0.46, e - halfV * 0.1, e + halfV * 0.38);
+  const tilt = THREE.MathUtils.clamp(craftBelow - halfV * 0.5, e - halfV * 0.1, e + halfV * 0.38);
   const above = tilt - e;
 
   _dir.copy(radial).multiplyScalar(Math.cos(e)).addScaledVector(n, Math.sin(e));
@@ -85,6 +87,7 @@ export default function Rig({
   const out = useRef(new THREE.Vector3());
   const off = useRef(new THREE.Vector3());
   const up = useRef(new THREE.Vector3(0, 1, 0));
+  const prevCraft = useRef(new THREE.Vector3());
   const dUp = useRef(new THREE.Vector3(0, 1, 0));
   const init = useRef(false);
 
@@ -120,6 +123,20 @@ export default function Rig({
     if (f.mode === "orbit" && f.body) {
       frameOrbit(f.body, D, camera as THREE.PerspectiveCamera, state.size, dPos.current, dLook.current, out.current);
       dUp.current.copy(f.up);
+    } else if ((f.mode === "travel" || f.mode === "ease") && f.target) {
+      // Autopilot: ride behind the courier on the line to the target, so the
+      // destination sits dead ahead over the hull for the whole hop and
+      // whatever else is out there slides past at the edges.
+      const toT = out.current.copy(f.target.center).sub(f.pos);
+      const dist = toT.length();
+      toT.divideScalar(Math.max(dist, 1e-4));
+      const Dt = D * 0.95;
+      dPos.current
+        .copy(f.pos)
+        .addScaledVector(toT, -Dt)
+        .addScaledVector(f.up, Dt * 0.42);
+      dLook.current.copy(f.pos).addScaledVector(toT, Math.min(dist * 0.5, Dt * 2.5));
+      dUp.current.copy(f.up);
     } else {
       dPos.current
         .copy(f.pos)
@@ -133,12 +150,20 @@ export default function Rig({
       pos.current.copy(dPos.current);
       look.current.copy(dLook.current);
       up.current.copy(dUp.current);
+      prevCraft.current.copy(f.pos);
       init.current = true;
     } else {
-      pos.current.lerp(dPos.current, 1 - Math.exp(-3.2 * d));
-      look.current.lerp(dLook.current, 1 - Math.exp(-4 * d));
+      // Ease the camera in the craft's own frame: it moves rigidly with the
+      // courier and only the *offset* is smoothed. Chasing an absolute point
+      // at cruise speed leaves the camera a dozen units behind, and the
+      // craft shrinks to a dot mid-hop.
+      pos.current.sub(prevCraft.current).add(f.pos);
+      look.current.sub(prevCraft.current).add(f.pos);
+      pos.current.lerp(dPos.current, 1 - Math.exp(-2.6 * d));
+      look.current.lerp(dLook.current, 1 - Math.exp(-3.5 * d));
       up.current.lerp(dUp.current, 1 - Math.exp(-3 * d)).normalize();
     }
+    prevCraft.current.copy(f.pos);
 
     // the camera never goes inside a world either
     for (const b of allBodies) {

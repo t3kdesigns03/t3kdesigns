@@ -10,6 +10,10 @@ import { exploreStore } from "./store";
 export type Mode = "free" | "travel" | "orbit" | "ease";
 
 const MAX_SPEED = 18;
+/** autopilot cruise: the outer ring is a hundred units out */
+const TRAVEL_MAX = 30;
+/** the nameplate comes up this many parking radii out */
+const APPROACH = 4.5;
 /** space has no drag; a toy does, or you drift into the void forever */
 const DRAG = 0.36;
 const STEER = 2.4;
@@ -19,7 +23,7 @@ const ORBIT_OMEGA = 0.05;
 const LANDMARK_LEAD = 0.28;
 const TAU = Math.PI * 2;
 /** soft edge of the map */
-const BOUNDARY = 150;
+const BOUNDARY = 190;
 
 export const CAM_MIN = 3.2;
 export const CAM_MAX = 16;
@@ -245,7 +249,7 @@ export function step(dt: number): boolean {
 
     const toEntry = entry.sub(f.pos);
     const d = toEntry.length();
-    const speed = Math.min(MAX_SPEED, 1.5 + d * 1.1);
+    const speed = Math.min(TRAVEL_MAX, 1.5 + d * 1.1);
     const desired = toEntry.multiplyScalar(speed / Math.max(d, 1e-4));
 
     // steer around anything in the way
@@ -301,6 +305,11 @@ export function step(dt: number): boolean {
       if (vn < 0) f.vel.addScaledVector(off, -vn);
     }
   }
+
+  // nameplate: parked, or closing on the target
+  const aim = f.mode === "orbit" ? f.body : f.mode === "travel" || f.mode === "ease" ? f.target : null;
+  const near = aim && (f.mode === "orbit" || f.pos.distanceTo(aim.center) < aim.orbitR * APPROACH);
+  exploreStore.setPlate(near && aim ? aim.id : null);
 
   // heading follows velocity; bank into the turn
   const prev = _b.copy(f.fwd);

@@ -1,11 +1,12 @@
 import * as THREE from "three";
+import { outerProjects } from "@/lib/outerProjects";
 import { projects, type Project } from "@/lib/projects";
 import { srand } from "@/components/scene/color";
 import { LOOKS, type Look } from "./looks";
 
 /**
- * The /explore map: roughly 150 units across, hub at the origin, a 40-unit
- * hop taking ~3 seconds. Radii are about ten times the homepage's — here
+ * The /explore map: the inner eight within ~62 units of the hub, the outer
+ * seven on a ring about 104 out, two scenery bodies past that. Radii are about ten times the homepage's — here
  * the planets are the subject, not the trim.
  */
 export type Body = {
@@ -27,6 +28,8 @@ export type Body = {
   quat: THREE.Quaternion;
   /** world-space unit direction of the landmark, if the world has one */
   marker: THREE.Vector3 | null;
+  /** inner eight, or the outer ring */
+  ring: "inner" | "outer";
 };
 
 const PLACE: Record<string, { at: [number, number, number]; r: number; dock?: number }> = {
@@ -69,6 +72,27 @@ export const GALAXY_DIR = around(LIGHT_DIR, 3.7)
   .addScaledVector(LIGHT_DIR, Math.sin(THREE.MathUtils.degToRad(-17)))
   .normalize();
 
+/**
+ * The outer ring: seven worlds on a wide circle in the orbital plane, well
+ * clear of the inner eight (which all sit within ~62 units of the hub), with
+ * a little rise and fall so the ring does not read as a ruled line.
+ */
+const OUTER_R = 104;
+const OUTER_PLACE: Record<string, { a: number; lift: number; r: number }> = {
+  sts: { a: 0.35, lift: 6, r: 1.75 },
+  georgeandnicks: { a: 1.25, lift: -9, r: 1.9 },
+  kimscleaning: { a: 2.15, lift: 8, r: 1.7 },
+  appanoosegolf: { a: 3.05, lift: -4, r: 2.05 },
+  barberstucco: { a: 3.95, lift: 10, r: 1.6 },
+  debtangel: { a: 4.8, lift: -7, r: 1.8 },
+  donjulio: { a: 5.6, lift: 3, r: 1.85 },
+};
+
+function outerAt(a: number, lift: number): [number, number, number] {
+  const v = around(LIGHT_DIR, a).multiplyScalar(OUTER_R).addScaledVector(LIGHT_DIR, lift);
+  return [v.x, v.y, v.z];
+}
+
 function orient(seed: number) {
   const pole = LIGHT_DIR.clone()
     .add(new THREE.Vector3(srand(seed * 2.7) - 0.5, 0, srand(seed * 9.1) - 0.5).multiplyScalar(0.36))
@@ -87,28 +111,40 @@ function markerDir(azimuth: number) {
     .normalize();
 }
 
-export const worlds: Body[] = projects
+function makeWorld(p: Project, seed: number, at: [number, number, number], r: number, dock: number | undefined, ring: Body["ring"]): Body {
+  const look = LOOKS[p.id];
+  const dockR = r * (dock ?? 1.95);
+  const { pole, quat } = orient(seed);
+  return {
+    id: p.id,
+    name: p.name,
+    project: p,
+    look,
+    center: new THREE.Vector3(...at),
+    radius: r,
+    dockR,
+    orbitR: Math.max(dockR * 1.22, r * 3.1),
+    accent: p.color,
+    pole,
+    quat,
+    marker: look.marker ? markerDir(look.marker.azimuth) : null,
+    ring,
+  };
+}
+
+const inner: Body[] = projects
   .filter((p) => PLACE[p.id] && LOOKS[p.id])
+  .map((p, i) => makeWorld(p, i + 1, PLACE[p.id].at, PLACE[p.id].r, PLACE[p.id].dock, "inner"));
+
+const outer: Body[] = outerProjects
+  .filter((p) => OUTER_PLACE[p.id] && LOOKS[p.id])
   .map((p, i) => {
-    const look = LOOKS[p.id];
-    const { at, r, dock } = PLACE[p.id];
-    const dockR = r * (dock ?? 1.95);
-    const { pole, quat } = orient(i + 1);
-    return {
-      id: p.id,
-      name: p.name,
-      project: p,
-      look,
-      center: new THREE.Vector3(...at),
-      radius: r,
-      dockR,
-      orbitR: Math.max(dockR * 1.22, r * 3.1),
-      accent: p.color,
-      pole,
-      quat,
-      marker: look.marker ? markerDir(look.marker.azimuth) : null,
-    };
+    const o = OUTER_PLACE[p.id];
+    return makeWorld(p, 20 + i, outerAt(o.a, o.lift), o.r, undefined, "outer");
   });
+
+/** Fifteen destinations: the inner eight first, then the outer ring. */
+export const worlds: Body[] = [...inner, ...outer];
 
 function sceneryBody(id: string, at: [number, number, number], r: number, seed: number): Body {
   const look = LOOKS[id];
@@ -126,13 +162,14 @@ function sceneryBody(id: string, at: [number, number, number], r: number, seed: 
     pole,
     quat,
     marker: null,
+    ring: "outer",
   };
 }
 
 /** Two scenery bodies, low on the sky so parked shots catch them. */
 export const scenery: Body[] = [
-  sceneryBody("scenery-giant", [-118, -34, -104], 11, 40),
-  sceneryBody("scenery-ice", [118, -26, -66], 4.5, 41),
+  sceneryBody("scenery-giant", [-170, -50, -150], 13, 40),
+  sceneryBody("scenery-ice", [178, -40, -100], 5, 41),
 ];
 
 export const allBodies: Body[] = [...worlds, ...scenery];

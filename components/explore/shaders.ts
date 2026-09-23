@@ -293,7 +293,7 @@ export const planetFrag = /* glsl */ `
       albedo = mix(albedo, uC, smoothstep(0.55, 0.9, 0.5 + 0.5 * sin(t * 5.3 + 1.0)) * 0.55);
       float storm = 1.0 - smoothstep(0.05, 0.11, length(p - normalize(vec3(0.6, -0.25, 0.75))));
       albedo = mix(albedo, uC * 1.1, storm * 0.6);
-    } else {
+    } else if (kind == 9) {
       // ice — pale plains cut by dark fractures
       float base = fbm(p * 3.0 + uSeed);
       albedo = mix(uB, uC, smoothstep(0.35, 0.75, base));
@@ -301,6 +301,124 @@ export const planetFrag = /* glsl */ `
       albedo = mix(albedo, uA, pow(r, 12.0) * 0.9);
       spec = 0.25;
       gloss = 50.0;
+    } else if (kind == 10) {
+      // SMALL TOWN SIPS — patchwork farmland, tea-gold farmsteads, one outpost
+      float lat = asin(clamp(p.y, -1.0, 1.0));
+      float lon = atan(p.z, p.x);
+      vec2 g = vec2(lon * 15.0, lat * 20.0) + vec2(fbm3(p * 3.0), fbm3(p * 3.0 + 9.0)) * 2.2;
+      vec2 cell = floor(g);
+      vec2 f = fract(g);
+      float pick = hash31(vec3(cell, uSeed));
+      vec3 field = pick < 0.4 ? uB : pick < 0.75 ? uC : mix(uA, uB, 0.6);
+      field = mix(field, uB, 0.55) * (0.88 + 0.16 * hash31(vec3(cell, 4.0)));
+      float hedge = 1.0 - smoothstep(0.03, 0.08, min(min(f.x, 1.0 - f.x), min(f.y, 1.0 - f.y)));
+      albedo = mix(field, uA, hedge * 0.3);
+      albedo *= 0.8 + 0.3 * fbm3(p * 8.0);
+      glow += uLights * dots(p, 55.0, 0.09, 0.12, px) * night;
+      if (uMarkerSize > 0.0) {
+        float d = length(N - uMarker);
+        glow += uLights * dots(N, 160.0, 0.75, 0.2, px) * smoothstep(0.06, 0.02, d) * 1.6;
+        glow += uLights * exp(-d * d / 0.003) * 0.22;
+      }
+      cloud = smoothstep(0.62, 0.85, fbm3(vec3(p.x * 2.5, p.y * 5.0, p.z * 2.5) + uTime * 0.004)) * uCloud;
+    } else if (kind == 11) {
+      // GEORGE & NICK'S — charcoal and brick, embers in the cracks, a lit square
+      float h = fbm(p * 2.6 + uSeed);
+      albedo = mix(uA, uB, smoothstep(0.35, 0.7, h));
+      albedo = mix(albedo, uC, smoothstep(0.62, 0.8, fbm3(p * 6.0 + 3.0)) * 0.5);
+      float r = 1.0 - abs(fbm3(p * 3.3 + 2.0) * 2.0 - 1.0);
+      float crack = smoothstep(0.94, 0.985, r);
+      float flick = 0.75 + 0.25 * sin(uTime * 0.8 + fbm3(p * 9.0) * 6.0);
+      glow += vec3(1.0, 0.36, 0.12) * crack * (0.12 + 0.55 * night) * flick;
+      if (uMarkerSize > 0.0) {
+        vec3 M = uMarker;
+        vec3 t1 = normalize(cross(M, vec3(0.0, 1.0, 0.0)));
+        vec3 t2 = cross(M, t1);
+        vec3 o = N - M;
+        vec2 q = vec2(dot(o, t1), dot(o, t2));
+        // lamps round the four sides of the square
+        float side = 0.07;
+        float edge = abs(max(abs(q.x), abs(q.y)) - side);
+        float lampRow = 1.0 - smoothstep(0.004, 0.008 + px, edge);
+        float along = fract((q.x + q.y + 0.2) * 70.0);
+        float lamps = lampRow * (1.0 - smoothstep(0.18, 0.4, abs(along - 0.5) * 2.0 - 0.3));
+        glow += uLights * lamps * 2.0;
+        glow += uLights * (1.0 - smoothstep(0.0, side, max(abs(q.x), abs(q.y)))) * 0.25;
+        glow += uAccent * exp(-dot(q, q) / 0.02) * 0.2;
+      }
+    } else if (kind == 12) {
+      // KIM'S — ice-white and pale teal: clean, soft bands, almost nothing else
+      float t = p.y * 3.0 + fbm3(p * 1.5 + uSeed) * 0.8;
+      float bands = 0.5 + 0.5 * sin(t * 3.0);
+      albedo = mix(uB, uC, bands);
+      albedo = mix(albedo, uA, smoothstep(0.62, 0.8, fbm3(p * 2.2 + 4.0)) * 0.35);
+      spec = uSpec;
+      gloss = 70.0;
+      glow += uLights * dots(p, 48.0, 0.035, 0.12, px) * night;
+    } else if (kind == 13) {
+      // APPANOOSE — fairways striped by the mower, sand, ponds, one clubhouse
+      float rough = fbm(p * 3.2 + uSeed);
+      float fair = smoothstep(0.48, 0.52, rough) * (1.0 - smoothstep(0.62, 0.66, rough));
+      vec3 dir = normalize(cross(p, vec3(0.3, 1.0, 0.1)));
+      float stripe = step(0.5, fract(dot(p, dir) * 60.0));
+      vec3 grass = mix(uA, uB, 0.35 + 0.3 * fbm3(p * 10.0));
+      vec3 fairway = uB * (1.1 + 0.18 * stripe);
+      albedo = mix(grass, fairway, fair);
+      float sand = smoothstep(0.86, 0.9, vnoise(p * 30.0 + 3.0)) * fair;
+      albedo = mix(albedo, uC, sand);
+      float pond = smoothstep(0.8, 0.84, vnoise(p * 14.0 + 11.0)) * (1.0 - fair);
+      albedo = mix(albedo, vec3(0.05, 0.14, 0.2), pond);
+      spec = pond * 0.9;
+      gloss = 120.0;
+      if (uMarkerSize > 0.0) {
+        float d = length(N - uMarker);
+        glow += uLights * (1.0 - smoothstep(0.008, 0.016 + px, d)) * 3.2;
+        glow += uLights * exp(-d * d / 0.004) * 0.3;
+      }
+      cloud = smoothstep(0.64, 0.86, fbm3(vec3(p.x * 2.2, p.y * 4.4, p.z * 2.2) + uTime * 0.004 + 6.0)) * uCloud;
+    } else if (kind == 14) {
+      // BARBER STUCCO — limestone moon, quarry terraces, stucco dust
+      float warp = fbm3(p * 2.0 + uSeed);
+      float strata = 0.5 + 0.5 * sin(p.y * 38.0 + warp * 6.0);
+      albedo = mix(uB, uC, smoothstep(0.35, 0.8, fbm(p * 3.5 + 2.0)));
+      albedo *= 0.86 + 0.18 * strata;
+      // stepped quarry pits: craters whose walls are banded
+      vec2 c1 = craters(p, 4.0, 0.6);
+      float steps = step(0.5, fract(c1.x * 4.0));
+      albedo = mix(albedo, uA * (0.9 + 0.3 * steps), c1.x * 0.75);
+      albedo += uC * 0.25 * c1.y;
+      vec2 c2 = craters(p, 11.0, 0.35);
+      albedo *= 1.0 - 0.2 * c2.x;
+      glow += uLights * dots(p, 70.0, 0.05 * c1.x, 0.12, px) * night * 0.8;
+    } else if (kind == 15) {
+      // DEBT ANGEL — pale silver-blue, quiet, one guiding light
+      float t = p.y * 2.2 + fbm3(p * 1.3 + uSeed) * 0.6;
+      albedo = mix(uA, uB, 0.5 + 0.5 * sin(t * 2.4));
+      albedo = mix(albedo, uC, smoothstep(0.55, 0.85, fbm3(p * 2.4 + 8.0)) * 0.45);
+      spec = uSpec;
+      gloss = 50.0;
+      if (uMarkerSize > 0.0) {
+        float d = length(N - uMarker);
+        glow += uLights * (1.0 - smoothstep(0.008, 0.015 + px, d)) * 3.6;
+        glow += vec3(0.75, 0.84, 1.0) * exp(-d * d / 0.012) * 0.35;
+      }
+      cloud = smoothstep(0.66, 0.9, fbm3(vec3(p.x * 2.0, p.y * 5.0, p.z * 2.0) + uTime * 0.003 + 1.0)) * uCloud;
+    } else {
+      // DON JULIO — terracotta mesas, and a night market strung with lights
+      float h = fbm(p * 2.8 + uSeed);
+      float mesa = floor(h * 7.0) / 7.0;
+      albedo = mix(uA, uB, smoothstep(0.3, 0.7, mesa));
+      albedo = mix(albedo, uC, smoothstep(0.62, 0.78, h) * 0.6);
+      float wash = 1.0 - smoothstep(0.0, 0.02, abs(fbm3(p * 3.0 + 5.0) - 0.5));
+      albedo = mix(albedo, uA * 0.7, wash * 0.6);
+      // strings of lamps along a few winding lanes
+      float lane = 1.0 - smoothstep(0.0, 0.006 + px * 1.5, abs(fbm3(p * 4.0 + 13.0) - 0.5));
+      float market = smoothstep(0.45, 0.65, fbm3(p * 2.0 + 21.0));
+      float bulbs = dots(p, 200.0, 0.9, 0.2, px) * lane * market;
+      float hue = vnoise(p * 30.0);
+      vec3 lamp = hue < 0.33 ? vec3(1.0, 0.72, 0.38) : hue < 0.66 ? vec3(1.0, 0.5, 0.62) : vec3(0.55, 0.95, 0.85);
+      glow += lamp * bulbs * 1.8 * night;
+      glow += uLights * dots(p, 60.0, 0.05, 0.1, px) * night * 0.7;
     }
 
     // clouds sit over everything and hide the ground lights under them

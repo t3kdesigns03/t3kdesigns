@@ -1,6 +1,6 @@
 # T3KDESIGNS — PROJECT HANDOFF
 
-**Written:** 2026-09-22 · **Updated:** 2026-09-23 (visual pass) · **Repo:** `E:\T3KDesigns\T3KDESIGNSHOME` → `github.com/t3kdesigns03/t3kdesigns`
+**Written:** 2026-09-22 · **Updated:** 2026-09-23 (visual pass, outer ring) · **Repo:** `E:\T3KDesigns\T3KDESIGNSHOME` → `github.com/t3kdesigns03/t3kdesigns`
 
 Pick this up in a fresh chat. Everything needed to resume is here — current
 state, hard-won gotchas, and the `/explore` micro-game (now **built** — see §0;
@@ -76,6 +76,28 @@ game between the eight worlds"**. Push from Git Bash.
 - Sky: stars + a faint band along the orbital plane + a one-quad spiral
   galaxy impostor below the plane (visible behind parked worlds).
 - `/` initial JS unchanged at 222.5 KiB gz; explore chunk ~12 KiB gz; no textures.
+
+### Outer ring + orbit nameplate (T3KDESIGNS-EXPLORE-OUTER-RING.md) — done
+- Seven explore-only worlds in `lib/outerProjects.ts` (NOT projects.ts, so `/`
+  never downloads them; homepage dock stays eight): Small Town Sips, George &
+  Nick's, Kim's Cleaning Products, Appanoose Country Club, Barber Stucco,
+  Debt Angel, Don Julio Cantina. All seven hrefs checked live on 2026-09-23
+  (Don Julio stays `building` per the brief but its site loads, so it keeps
+  `open site →`). Promote one to the homepage by moving its row into projects.
+- Placed on a ring ~104 units out in the orbital plane; scenery pushed to ~230.
+  Seven new shader kinds (10–16 in shaders.ts): farm patchwork + outpost, ember
+  cracks + lit town square, pristine ice-teal + fine ring, striped fairways +
+  clubhouse light, limestone quarry terraces, silver-blue + guide star,
+  terracotta mesas + multicolour string lights.
+- Autopilot camera: rides behind the courier on the line to the target, eased
+  in the craft's own frame (no lagging a dozen units behind at cruise).
+  Cruise 30 u/s for autopilot. HUD reads `en route · Name` mid-hop, never
+  "deep space"; that is only for free flight.
+- Nameplate: tracked uppercase name, 1px accent rule, one-liner, open site →.
+  Comes up within 4.5 parking radii, holds in orbit, fades on burn-away.
+  Captured dock ring shows 12 sparse ticks.
+- Pips: two rows (inner eight / outer seven), 44px tap targets, active pip lit.
+- `/` initial JS still 222.5 KiB gz; explore-only lazy code ~23 KiB gz.
 
 ### Deliberate deviation: no bloom on `/explore`
 Any shared use of `@react-three/postprocessing` (or three's

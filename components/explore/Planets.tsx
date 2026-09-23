@@ -5,6 +5,7 @@ import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { hexToRGB } from "@/components/scene/color";
 import type { PointPool } from "@/components/scene/traffic/pointPool";
+import { flight } from "./flight";
 import { FILL_DIR, LIGHT_DIR, allBodies, worlds, type Body } from "./layout";
 import { KIND } from "./looks";
 import { atmoFrag, atmoVert, planetFrag, planetVert, ringFrag, ringVert } from "./shaders";
@@ -203,9 +204,29 @@ function Dock({
     return new THREE.BufferGeometry().setFromPoints(pts);
   }, [b.dockR, arc]);
 
-  useFrame((state) => {
+  // sparse ticks on the ring you have captured
+  const ticks = useMemo(() => {
+    const pts: number[] = [];
+    const n = 12;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * TAU * arc;
+      const c = Math.cos(a);
+      const s = Math.sin(a);
+      pts.push(c * b.dockR * 0.965, 0, s * b.dockR * 0.965, c * b.dockR * 1.035, 0, s * b.dockR * 1.035);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+    return g;
+  }, [b.dockR, arc]);
+  const tickMat = useRef<THREE.LineBasicMaterial>(null);
+  const held = useRef(0);
+
+  useFrame((state, dt) => {
     const t = frozen ? index * 1.7 : state.clock.elapsedTime;
     const head = (t * 0.11 + index * 0.37) % 1;
+    const captured = flight.mode === "orbit" && flight.body === b ? 1 : 0;
+    held.current += (captured - held.current) * (1 - Math.exp(-(frozen ? 60 : 2.5) * Math.min(dt, 0.1)));
+    if (tickMat.current) tickMat.current.opacity = held.current * 0.55;
 
     for (let i = 0; i < DOCK_LIGHTS; i++) {
       const f = i / DOCK_LIGHTS;
@@ -226,7 +247,7 @@ function Dock({
         .multiplyScalar(b.dockR)
         .applyQuaternion(b.quat)
         .add(b.center);
-      pool.set(base + i, p.current.x, p.current.y, p.current.z, rgb[0], rgb[1], rgb[2], 1.1, lit * 0.75 * endBlink);
+      pool.set(base + i, p.current.x, p.current.y, p.current.z, rgb[0], rgb[1], rgb[2], 1.1, lit * (0.7 + 0.35 * held.current) * endBlink);
     }
 
     if (markerSlot >= 0 && markerAt && b.look.marker) {
@@ -258,6 +279,16 @@ function Dock({
           />
         </lineLoop>
       )}
+      <lineSegments geometry={ticks}>
+        <lineBasicMaterial
+          ref={tickMat}
+          color={b.accent}
+          transparent
+          opacity={0}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </lineSegments>
       {station && (
         <mesh rotation={[Math.PI / 2, 0, 0]}>
           <torusGeometry args={[b.dockR, b.radius * 0.022, 6, 96, TAU * arc]} />

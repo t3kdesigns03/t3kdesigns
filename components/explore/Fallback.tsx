@@ -1,10 +1,11 @@
 import Link from "next/link";
+import { outerProjects } from "@/lib/outerProjects";
 import { projects } from "@/lib/projects";
 
 const toHref = (href?: string) =>
   href ? (href.startsWith("#") ? `/${href}` : href) : undefined;
 
-/** No WebGL: the void and the eight names. Never a white crash. */
+/** No WebGL: the void and every world's name. Never a white crash. */
 export default function Fallback() {
   return (
     <div className="fixed inset-0 overflow-y-auto bg-void">
@@ -18,7 +19,7 @@ export default function Fallback() {
           ← T3KDesigns
         </Link>
         <ul className="mt-8 flex flex-col gap-1">
-          {projects.map((p) => {
+          {[...projects, ...outerProjects].map((p) => {
             const href = toHref(p.href);
             return (
               <li key={p.id} className="flex items-center gap-3">

@@ -13,9 +13,14 @@ export type ExploreState = {
   target: string | null;
   /** any input has happened — the hint fades on the first one */
   touched: boolean;
+  /**
+   * The world whose nameplate is up: the one we are parked at, or the one
+   * we are closing on once it is near. Null out in open space.
+   */
+  plate: string | null;
 };
 
-let state: ExploreState = { parked: null, target: null, touched: false };
+let state: ExploreState = { parked: null, target: null, touched: false, plate: null };
 const listeners = new Set<() => void>();
 
 function set(patch: Partial<ExploreState>) {
@@ -33,6 +38,7 @@ export const exploreStore = {
   setTarget: (id: string | null) => set({ target: id, parked: null }),
   touch: () => set({ touched: true }),
   free: () => set({ parked: null, target: null }),
+  setPlate: (id: string | null) => set({ plate: id }),
   get: () => state,
 };
 
@@ -45,6 +51,6 @@ export function useExplore<T>(select: (s: ExploreState) => T): T {
   return useSyncExternalStore(
     subscribe,
     () => select(state),
-    () => select({ parked: null, target: null, touched: false }),
+    () => select({ parked: null, target: null, touched: false, plate: null }),
   );
 }

@@ -10,6 +10,11 @@ export type Project = {
   tags: string[];
   /** node emissive colour */
   color: string;
+  /**
+   * On the homepage mission dock. Defaults to true for `projects`; the
+   * outer ring below is explore-only unless a row sets it.
+   */
+  dock?: boolean;
 };
 
 /**
@@ -105,6 +110,12 @@ export const projects: Project[] = [
     color: "#cbb6ff",
   },
 ];
+
+/*
+ * The outer ring of /explore — seven more client worlds, explore-only — lives
+ * in lib/outerProjects.ts so the homepage never downloads it. To put one on
+ * the homepage mission dock, move its row up into `projects`.
+ */
 
 export const statusLabel: Record<ProjectStatus, string> = {
   live: "live",

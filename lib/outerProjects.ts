@@ -1,0 +1,86 @@
+import type { Project } from "./projects";
+
+/**
+ * The outer ring: live client work that orbits further out on /explore.
+ * Not on the homepage mission dock (dock: false). Kept out of projects.ts so
+ * the homepage bundle does not carry it.
+ */
+export const outerProjects: Project[] = [
+  {
+    id: "sts",
+    name: "Small Town Sips",
+    oneLiner: "Loaded teas out of Truro, Iowa",
+    blurb: "A small-town loaded-tea shop in Truro, Iowa.",
+    href: "https://sts.t3kdesigns.app",
+    status: "live",
+    tags: ["Storefront"],
+    color: "#f2c46d",
+    dock: false,
+  },
+  {
+    id: "georgeandnicks",
+    name: "George & Nick's",
+    oneLiner: "Pizza and charcoal steaks on the Centerville square since 1968",
+    blurb: "Pizza and charcoal steaks on the Centerville, Iowa square since 1968.",
+    href: "https://georgeandnicks.t3kdesigns.app",
+    status: "live",
+    tags: ["Restaurant"],
+    color: "#ff7a52",
+    dock: false,
+  },
+  {
+    id: "kimscleaning",
+    name: "Kim's Cleaning Products",
+    oneLiner: "USA-made microfiber. Water does the work.",
+    blurb: "USA-made microfiber cleaning cloths and tools that clean with just water.",
+    href: "https://kimscleaningproducts.t3kdesigns.app",
+    status: "live",
+    tags: ["Storefront"],
+    color: "#a8f0e6",
+    dock: false,
+  },
+  {
+    id: "appanoosegolf",
+    name: "Appanoose Country Club",
+    oneLiner: "Nine holes in Centerville since 1913",
+    blurb: "A nine-hole country club in Centerville, Iowa, since 1913.",
+    href: "https://appanoosegolf.t3kdesigns.app",
+    status: "live",
+    tags: ["Club"],
+    color: "#8fe388",
+    dock: false,
+  },
+  {
+    id: "barberstucco",
+    name: "Barber Stucco",
+    oneLiner: "Stucco, EIFS, ArcusStone at the Lake of the Ozarks",
+    blurb: "Stucco, EIFS and ArcusStone exteriors at the Lake of the Ozarks.",
+    href: "https://barberstucco.t3kdesigns.app",
+    status: "live",
+    tags: ["Contractor"],
+    color: "#e3d2b4",
+    dock: false,
+  },
+  {
+    id: "debtangel",
+    name: "Debt Angel",
+    oneLiner: "A clear plan for unsecured debt. You approve every step.",
+    blurb: "A clear plan for unsecured debt, where you approve every step.",
+    href: "https://debtangel.t3kdesigns.app",
+    status: "live",
+    tags: ["Finance"],
+    color: "#b8cff5",
+    dock: false,
+  },
+  {
+    id: "donjulio",
+    name: "Don Julio Cantina",
+    oneLiner: "Cantina — site still landing",
+    blurb: "A cantina whose site is still landing.",
+    href: "https://donjuliocantina.t3kdesigns.app",
+    status: "building",
+    tags: ["Restaurant"],
+    color: "#ff8fb1",
+    dock: false,
+  },
+];
