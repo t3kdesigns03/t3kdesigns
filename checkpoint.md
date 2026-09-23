@@ -78,8 +78,7 @@ game between the eight worlds"**. Push from Git Bash.
 - `/` initial JS unchanged at 222.5 KiB gz; explore chunk ~12 KiB gz; no textures.
 
 ### Outer ring + orbit nameplate (T3KDESIGNS-EXPLORE-OUTER-RING.md) — done
-- Seven explore-only worlds in `lib/outerProjects.ts` (NOT projects.ts, so `/`
-  never downloads them; homepage dock stays eight): Small Town Sips, George &
+- Seven explore-only worlds in `lib/outerProjects.ts` at the time (since merged into projects.ts — see below): Small Town Sips, George &
   Nick's, Kim's Cleaning Products, Appanoose Country Club, Barber Stucco,
   Debt Angel, Don Julio Cantina. All seven hrefs checked live on 2026-09-23
   (Don Julio stays `building` per the brief but its site loads, so it keeps
@@ -114,6 +113,18 @@ game between the eight worlds"**. Push from Git Bash.
   section's "Fly between them →" stays as a second door.
 - `/` initial JS 222.57 KiB gz (+~70 bytes for the hero link). No explore code on `/`.
 - Next phase (per B): marketing / advertising.
+
+### All fifteen on the homepage (B's call, 2026-09-23) — done
+- The seven outer-ring rows moved from `lib/outerProjects.ts` (deleted) into
+  `lib/projects.ts`. The homepage mission dock, 3D constellation, panels and
+  /explore now all read one 15-row array. First eight = original constellation
+  + /explore inner ring; the rest = gap fillers on `/` + /explore outer ring.
+- Homepage ring: the original eight keep their exact positions; the seven sit
+  in the gaps between them (smaller clusters, alternating high/low). The gap
+  nearest the desktop camera stays empty. Traffic has homepage-scale world
+  defs for all seven (`traffic/worlds.ts`).
+- Work copy counts itself ("Fifteen systems orbiting one studio").
+- `/` initial JS 223.43 KiB gz (+0.86 KiB for the seven rows).
 
 ### Deliberate deviation: no bloom on `/explore`
 Any shared use of `@react-three/postprocessing` (or three's

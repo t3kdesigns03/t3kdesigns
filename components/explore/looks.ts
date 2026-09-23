@@ -319,7 +319,7 @@ export const LOOKS: Record<string, Look> = {
 
 /**
  * The HUD's Director chips: a short label for tight rows (the full name and
- * one-liner still come from lib/projects.ts and lib/outerProjects.ts), and
+ * one-liner still come from lib/projects.ts), and
  * — where the surface palette above would not read at 30px — the three
  * tones the little sphere is painted in: lit, mid, shadow.
  */

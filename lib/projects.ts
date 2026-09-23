@@ -10,16 +10,13 @@ export type Project = {
   tags: string[];
   /** node emissive colour */
   color: string;
-  /**
-   * On the homepage mission dock. Defaults to true for `projects`; the
-   * outer ring below is explore-only unless a row sets it.
-   */
-  dock?: boolean;
 };
 
 /**
- * Single source of truth. The 3D constellation and the mission dock
- * both render from this array — order sets the orbital ring order.
+ * Single source of truth. The 3D constellation, the mission dock and
+ * /explore all render from this array. The first eight are the original
+ * constellation (and /explore's inner ring); the rest fill the gaps between
+ * them on the homepage and form the outer ring on /explore.
  */
 export const projects: Project[] = [
   {
@@ -109,13 +106,85 @@ export const projects: Project[] = [
     tags: ["Studio", "Custom work"],
     color: "#cbb6ff",
   },
+  // —— the outer ring: fly out to these on /explore ——
+  {
+    id: "sts",
+    name: "Small Town Sips",
+    oneLiner: "Loaded teas out of Truro, Iowa",
+    blurb:
+      "The site for a small-town loaded-tea shop in Truro, Iowa: the menu, the story, and a reason to stop in.",
+    href: "https://sts.t3kdesigns.app",
+    status: "live",
+    tags: ["Storefront"],
+    color: "#f2c46d",
+  },
+  {
+    id: "georgeandnicks",
+    name: "George & Nick's",
+    oneLiner: "Pizza and charcoal steaks on the Centerville square since 1968",
+    blurb:
+      "The site for a Centerville, Iowa landmark: Greek-recipe pizza and hand-cut charcoal steaks on the downtown square since 1968.",
+    href: "https://georgeandnicks.t3kdesigns.app",
+    status: "live",
+    tags: ["Restaurant"],
+    color: "#ff7a52",
+  },
+  {
+    id: "kimscleaning",
+    name: "Kim's Cleaning Products",
+    oneLiner: "USA-made microfiber. Water does the work.",
+    blurb:
+      "A storefront for American-made microfiber cloths and tools that clean with just water — no sprays, no residue.",
+    href: "https://kimscleaningproducts.t3kdesigns.app",
+    status: "live",
+    tags: ["Storefront"],
+    color: "#a8f0e6",
+  },
+  {
+    id: "appanoosegolf",
+    name: "Appanoose Country Club",
+    oneLiner: "Nine holes in Centerville since 1913",
+    blurb:
+      "The site for a nine-hole country club in Centerville, Iowa, founded in 1913: the course, the clubhouse table, and membership.",
+    href: "https://appanoosegolf.t3kdesigns.app",
+    status: "live",
+    tags: ["Club"],
+    color: "#8fe388",
+  },
+  {
+    id: "barberstucco",
+    name: "Barber Stucco",
+    oneLiner: "Stucco, EIFS, ArcusStone at the Lake of the Ozarks",
+    blurb:
+      "The site for a Camdenton, Missouri exterior contractor: stucco, EIFS and ArcusStone work around the Lake of the Ozarks.",
+    href: "https://barberstucco.t3kdesigns.app",
+    status: "live",
+    tags: ["Contractor"],
+    color: "#e3d2b4",
+  },
+  {
+    id: "debtangel",
+    name: "Debt Angel",
+    oneLiner: "A clear plan for unsecured debt. You approve every step.",
+    blurb:
+      "A clearer way through unsecured debt: see every account and compare a structured plan against your current path in real dollars before deciding.",
+    href: "https://debtangel.t3kdesigns.app",
+    status: "live",
+    tags: ["Finance"],
+    color: "#b8cff5",
+  },
+  {
+    id: "donjulio",
+    name: "Don Julio Cantina",
+    oneLiner: "Cantina — site still landing",
+    blurb:
+      "A family Mexican cantina in Creston, Iowa. The site is still landing.",
+    href: "https://donjuliocantina.t3kdesigns.app",
+    status: "building",
+    tags: ["Restaurant"],
+    color: "#ff8fb1",
+  },
 ];
-
-/*
- * The outer ring of /explore — seven more client worlds, explore-only — lives
- * in lib/outerProjects.ts so the homepage never downloads it. To put one on
- * the homepage mission dock, move its row up into `projects`.
- */
 
 export const statusLabel: Record<ProjectStatus, string> = {
   live: "live",

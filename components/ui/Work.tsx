@@ -7,6 +7,9 @@ import { projects } from "@/lib/projects";
 import { sceneStore, useScene } from "@/lib/store";
 import StatusPill from "./StatusPill";
 
+const WORDS = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty"];
+const count = WORDS[projects.length] ?? String(projects.length);
+
 export default function Work() {
   const hovered = useScene((s) => s.hovered);
   const active = useScene((s) => s.active);
@@ -31,8 +34,8 @@ export default function Work() {
           </h2>
           <p className="mt-5 text-sm leading-relaxed text-dim">
             {failed
-              ? "Eight systems, one studio. Pick one."
-              : "Eight systems orbiting one studio. Touch a light out there, or read them straight."}
+              ? `${count} systems, one studio. Pick one.`
+              : `${count} systems orbiting one studio. Touch a light out there, or read them straight.`}
           </p>
           {!failed && (
             <Link href="/explore" prefetch={false} className="pill pill-ghost mt-6">

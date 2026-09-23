@@ -164,6 +164,49 @@ export const WORLDS: Record<string, WorldDef> = {
 };
 
 /**
+ * The later systems: smaller bodies in the gaps between the first eight,
+ * same recipe, each tuned toward the world it is on /explore.
+ */
+Object.assign(WORLDS, {
+  sts: {
+    id: "sts", base: "#2a2410", base2: "#6a5f28", atmo: "#ffcf80", radius: 0.14,
+    feature: 3.4, city: 0.5, cloud: 0.12, spec: 0, atmoStrength: 0.16, bands: 0,
+    spin: 0.04, tilt: 0.3, beacon: { color: "#f2c46d", size: 1.4 },
+  },
+  georgeandnicks: {
+    id: "georgeandnicks", base: "#140e0c", base2: "#4a1f15", atmo: "#ff8a5c", radius: 0.15,
+    feature: 3.0, city: 0.9, cloud: 0, spec: 0, atmoStrength: 0.12, bands: 0,
+    spin: 0.035, tilt: -0.3, beacon: { color: "#ff7a52", size: 1.8 },
+  },
+  kimscleaning: {
+    id: "kimscleaning", base: "#7f9ca2", base2: "#dcebeb", atmo: "#bff6ee", radius: 0.13,
+    feature: 1.8, city: 0.08, cloud: 0, spec: 0.4, atmoStrength: 0.18, bands: 1,
+    spin: 0.03, tilt: 0.4,
+    ring: { inner: 0.19, outer: 0.215, color: "#e6fffb", opacity: 0.55 },
+  },
+  appanoosegolf: {
+    id: "appanoosegolf", base: "#0f2410", base2: "#3f7a34", atmo: "#a8f0b0", radius: 0.15,
+    feature: 3.2, city: 0.1, cloud: 0.14, spec: 0.2, atmoStrength: 0.16, bands: 0,
+    spin: 0.04, tilt: 0.2, beacon: { color: "#ffd9a0", size: 1.6 },
+  },
+  barberstucco: {
+    id: "barberstucco", base: "#5a5347", base2: "#d8cdb6", atmo: "#efe4cf", radius: 0.12,
+    feature: 4.0, city: 0.05, cloud: 0, spec: 0, atmoStrength: 0.05, bands: 0,
+    spin: 0.03, tilt: -0.45,
+  },
+  debtangel: {
+    id: "debtangel", base: "#5d6c86", base2: "#c9d6ec", atmo: "#c9dcff", radius: 0.14,
+    feature: 2.0, city: 0.05, cloud: 0.18, spec: 0.15, atmoStrength: 0.18, bands: 1,
+    spin: 0.025, tilt: 0.25, beacon: { color: "#eef3ff", size: 1.8 },
+  },
+  donjulio: {
+    id: "donjulio", base: "#3a160c", base2: "#a14c28", atmo: "#ff9a74", radius: 0.145,
+    feature: 3.0, city: 0.85, cloud: 0, spec: 0, atmoStrength: 0.16, bands: 0,
+    spin: 0.038, tilt: -0.2,
+  },
+} satisfies Record<string, WorldDef>);
+
+/**
  * Somewhere to fly that is not work. Scenery only — never in the dock,
  * never clickable, but far enough out that a run there reads as a journey.
  */

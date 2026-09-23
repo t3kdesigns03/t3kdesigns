@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { outerProjects } from "@/lib/outerProjects";
 import { projects } from "@/lib/projects";
 
 const toHref = (href?: string) =>
@@ -19,7 +18,7 @@ export default function Fallback() {
           ← T3KDesigns
         </Link>
         <ul className="mt-8 flex flex-col gap-1">
-          {[...projects, ...outerProjects].map((p) => {
+          {projects.map((p) => {
             const href = toHref(p.href);
             return (
               <li key={p.id} className="flex items-center gap-3">

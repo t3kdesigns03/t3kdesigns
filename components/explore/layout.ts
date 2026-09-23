@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { outerProjects } from "@/lib/outerProjects";
 import { projects, type Project } from "@/lib/projects";
 import { srand } from "@/components/scene/color";
 import { LOOKS, type Look } from "./looks";
@@ -136,7 +135,7 @@ const inner: Body[] = projects
   .filter((p) => PLACE[p.id] && LOOKS[p.id])
   .map((p, i) => makeWorld(p, i + 1, PLACE[p.id].at, PLACE[p.id].r, PLACE[p.id].dock, "inner"));
 
-const outer: Body[] = outerProjects
+const outer: Body[] = projects
   .filter((p) => OUTER_PLACE[p.id] && LOOKS[p.id])
   .map((p, i) => {
     const o = OUTER_PLACE[p.id];
