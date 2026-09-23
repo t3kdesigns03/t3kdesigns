@@ -1,0 +1,199 @@
+/**
+ * What each body looks like on /explore. The homepage draws its worlds a
+ * few pixels across and one shader covers them all; here a world fills a
+ * third of the screen, so each one gets its own surface recipe (the `kind`
+ * switch in shaders.ts) and its own palette. Accent colours come from
+ * lib/projects.ts and stay trim — atmosphere, lights — never the albedo.
+ */
+export const KIND = {
+  studio: 0,
+  ocean: 1,
+  amber: 2,
+  rock: 3,
+  archipelago: 4,
+  moon: 5,
+  station: 6,
+  night: 7,
+  giant: 8,
+  ice: 9,
+} as const;
+
+export type Look = {
+  kind: number;
+  /** palette: deep / mid / high */
+  a: string;
+  b: string;
+  c: string;
+  atmo: string;
+  /** limb brightness; 0 = airless */
+  atmoStrength: number;
+  /** atmosphere scale height as a fraction of the radius */
+  atmoHeight: number;
+  /** night-light colour and how much of it there is */
+  lights: string;
+  lightAmount: number;
+  cloud: number;
+  spec: number;
+  /** axial spin, rad/s; 0 = tidally locked (anything with a fixed landmark) */
+  spin: number;
+  /** annulus, in multiples of the radius */
+  ring?: { inner: number; outer: number; color: string; opacity: number; ringlet?: boolean };
+  /** a landmark pinned just past the terminator: stadium, outpost, porch */
+  marker?: { azimuth: number; size: number; glow: string };
+};
+
+export const LOOKS: Record<string, Look> = {
+  // dark hub; the slender ring is the feature
+  t3kdesigns: {
+    kind: KIND.studio,
+    a: "#08070d",
+    b: "#15121e",
+    c: "#2b2540",
+    atmo: "#9d8ad6",
+    atmoStrength: 0.55,
+    atmoHeight: 0.035,
+    lights: "#d9ccff",
+    lightAmount: 1.4,
+    cloud: 0,
+    spec: 0.12,
+    spin: 0.018,
+    ring: { inner: 1.46, outer: 1.74, color: "#cfc2f2", opacity: 0.5, ringlet: true },
+  },
+  // ocean, thin cloud, a string of coastal light
+  spydernetwork: {
+    kind: KIND.ocean,
+    a: "#041428",
+    b: "#1f3a33",
+    c: "#5a5a45",
+    atmo: "#6fa6ff",
+    atmoStrength: 0.9,
+    atmoHeight: 0.045,
+    lights: "#ffd9a8",
+    lightAmount: 1.4,
+    cloud: 0.55,
+    spec: 0.6,
+    spin: 0.024,
+  },
+  // warm amber air, tea-gold towns
+  glowdaily: {
+    kind: KIND.amber,
+    a: "#2e1508",
+    b: "#8a4d1c",
+    c: "#e0a458",
+    atmo: "#ffa15e",
+    atmoStrength: 1.1,
+    atmoHeight: 0.05,
+    lights: "#ffc56e",
+    lightAmount: 1.4,
+    cloud: 0.3,
+    spec: 0.05,
+    spin: 0.02,
+  },
+  // small rock, one stadium on the night side
+  "stuart-softball": {
+    kind: KIND.rock,
+    a: "#1a1a1c",
+    b: "#3a3833",
+    c: "#6b675c",
+    atmo: "#8ff0c8",
+    atmoStrength: 0.18,
+    atmoHeight: 0.025,
+    lights: "#eafff2",
+    lightAmount: 1.4,
+    cloud: 0,
+    spec: 0,
+    spin: 0,
+    marker: { azimuth: 0.6, size: 1, glow: "#6ee7b7" },
+  },
+  // water specular, marina specks
+  "sob-rentals": {
+    kind: KIND.archipelago,
+    a: "#03203a",
+    b: "#0f7f8f",
+    c: "#c8b98a",
+    atmo: "#7fd6ff",
+    atmoStrength: 0.8,
+    atmoHeight: 0.04,
+    lights: "#c4f4ff",
+    lightAmount: 1.4,
+    cloud: 0.25,
+    spec: 1.4,
+    spin: 0.022,
+  },
+  // graphite / teal moon, a quiet outpost
+  "calming-the-chaos": {
+    kind: KIND.moon,
+    a: "#151a1b",
+    b: "#2b3234",
+    c: "#3aa597",
+    atmo: "#9be7d8",
+    atmoStrength: 0.12,
+    atmoHeight: 0.02,
+    lights: "#c9fff4",
+    lightAmount: 1.4,
+    cloud: 0,
+    spec: 0.1,
+    spin: 0,
+    marker: { azimuth: 2.3, size: 0.6, glow: "#9be7d8" },
+  },
+  // an unfinished station, not a marble
+  holotracker: {
+    kind: KIND.station,
+    a: "#1c1a22",
+    b: "#3b3846",
+    c: "#6a6578",
+    atmo: "#c084fc",
+    atmoStrength: 0,
+    atmoHeight: 0.02,
+    lights: "#e2c6ff",
+    lightAmount: 1.4,
+    cloud: 0,
+    spec: 0.6,
+    spin: 0.03,
+  },
+  // dark warm night, one porch light
+  porchlight: {
+    kind: KIND.night,
+    a: "#0d0806",
+    b: "#23150e",
+    c: "#4a2e1c",
+    atmo: "#ffb875",
+    atmoStrength: 0.35,
+    atmoHeight: 0.04,
+    lights: "#ffd79a",
+    lightAmount: 1.4,
+    cloud: 0,
+    spec: 0,
+    spin: 0,
+    marker: { azimuth: -1.1, size: 1, glow: "#ffd79a" },
+  },
+  "scenery-giant": {
+    kind: KIND.giant,
+    a: "#3a2616",
+    b: "#8d6a45",
+    c: "#d8b98c",
+    atmo: "#f0c392",
+    atmoStrength: 0.6,
+    atmoHeight: 0.03,
+    lights: "#000000",
+    lightAmount: 0,
+    cloud: 0,
+    spec: 0,
+    spin: 0.01,
+    ring: { inner: 1.45, outer: 2.25, color: "#cdb08a", opacity: 0.55 },
+  },
+  "scenery-ice": {
+    kind: KIND.ice,
+    a: "#23394a",
+    b: "#7b98a8",
+    c: "#dcebf2",
+    atmo: "#bfe8ff",
+    atmoStrength: 0.35,
+    atmoHeight: 0.03,
+    lights: "#000000",
+    lightAmount: 0,
+    cloud: 0,
+    spec: 0.5,
+    spin: 0.012,
+  },
+};

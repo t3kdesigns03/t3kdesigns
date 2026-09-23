@@ -4,24 +4,16 @@ import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { hexToRGB } from "@/components/scene/color";
-import {
-  ringFrag,
-  ringVert,
-  worldFrag,
-  worldVert,
-} from "@/components/scene/shaders/world";
 import type { PointPool } from "@/components/scene/traffic/pointPool";
-import { LIGHT_POS, allBodies, ringRadii, worlds, type Body } from "./layout";
+import { FILL_DIR, LIGHT_DIR, allBodies, worlds, type Body } from "./layout";
+import { KIND } from "./looks";
+import { atmoFrag, atmoVert, planetFrag, planetVert, ringFrag, ringVert } from "./shaders";
 
-const LIGHT_COLOR = new THREE.Color("#ffe4c0");
-const DOCK_LIGHTS = 16;
+const LIGHT_COLOR = new THREE.Color("#fff0de");
+const FILL_COLOR = new THREE.Color("#6f7fd6");
+const DOCK_LIGHTS = 24;
 const TAU = Math.PI * 2;
 
-/**
- * Same procedural world shader as the homepage — terminator, coastal night
- * lights, cloud deck, water glint, atmosphere limb — just seen from a few
- * units away instead of a few hundred.
- */
 function World({
   b,
   segments,
@@ -31,72 +23,129 @@ function World({
   segments: [number, number];
   frozen: boolean;
 }) {
-  const mesh = useRef<THREE.Mesh>(null);
+  const spin = useRef<THREE.Group>(null);
   const mat = useRef<THREE.ShaderMaterial>(null);
-  const d = b.def;
+  const L = b.look;
+  const station = L.kind === KIND.station;
 
   const uniforms = useMemo(
     () => ({
-      uLightPos: { value: LIGHT_POS },
+      uLightDir: { value: LIGHT_DIR },
       uLightColor: { value: LIGHT_COLOR },
-      uBase: { value: new THREE.Color(d.base) },
-      uBase2: { value: new THREE.Color(d.base2) },
-      uAccent: { value: new THREE.Color(b.accent) },
-      uAtmoColor: { value: new THREE.Color(d.atmo) },
+      uFillDir: { value: FILL_DIR },
+      uFillColor: { value: FILL_COLOR },
+      uA: { value: new THREE.Color(L.a) },
+      uB: { value: new THREE.Color(L.b) },
+      uC: { value: new THREE.Color(L.c) },
+      uAtmo: { value: new THREE.Color(L.atmo) },
+      uAtmoStrength: { value: L.atmoStrength },
+      uLights: { value: new THREE.Color(L.lights) },
+      uLightAmt: { value: L.lightAmount },
+      uKind: { value: L.kind },
       uSeed: { value: (b.id.length * 13.7) % 19 },
       uTime: { value: 0 },
-      uFeature: { value: d.feature },
-      uCity: { value: d.city },
-      uCloud: { value: d.cloud },
-      uSpec: { value: d.spec },
-      uAtmo: { value: d.atmoStrength * 1.15 },
-      uBands: { value: d.bands },
-      uAmbient: { value: 0.05 },
-      uCloseUp: { value: 1 },
+      uCloud: { value: L.cloud },
+      uSpec: { value: L.spec },
+      uMarker: { value: b.marker ?? new THREE.Vector3(0, -1, 0) },
+      uMarkerSize: { value: b.marker ? L.marker!.size : 0 },
+      uAccent: { value: new THREE.Color(b.accent) },
     }),
-    [b, d],
+    [b, L],
+  );
+
+  const atmo = useMemo(
+    () =>
+      L.atmoStrength > 0
+        ? {
+            uCenter: { value: b.center },
+            uRadius: { value: b.radius },
+            uHeight: { value: b.radius * L.atmoHeight },
+            uColor: { value: new THREE.Color(L.atmo) },
+            uStrength: { value: L.atmoStrength * 0.9 },
+            uLightDir: { value: LIGHT_DIR },
+          }
+        : null,
+    [b, L],
   );
 
   useFrame((state, dt) => {
     if (frozen) return;
     if (mat.current) mat.current.uniforms.uTime.value = state.clock.elapsedTime;
-    if (mesh.current) mesh.current.rotation.y += dt * d.spin;
+    if (spin.current && L.spin) spin.current.rotation.y += dt * L.spin;
   });
 
   return (
-    <group position={b.center}>
-      <mesh ref={mesh} rotation={[d.tilt, 0, 0]}>
-        <sphereGeometry args={[b.radius, segments[0], segments[1]]} />
-        <shaderMaterial
-          ref={mat}
-          uniforms={uniforms}
-          vertexShader={worldVert}
-          fragmentShader={worldFrag}
-        />
-      </mesh>
-      {d.scaffold && <Scaffold radius={b.radius} accent={b.accent} />}
+    <group position={b.center} quaternion={b.quat}>
+      <group ref={spin}>
+        <mesh>
+          <sphereGeometry args={[b.radius, segments[0], segments[1]]} />
+          <shaderMaterial
+            ref={mat}
+            uniforms={uniforms}
+            vertexShader={planetVert}
+            fragmentShader={planetFrag}
+            side={station ? THREE.DoubleSide : THREE.FrontSide}
+          />
+        </mesh>
+        {station && <StationCore radius={b.radius} accent={b.accent} />}
+      </group>
+      {atmo && (
+        <mesh>
+          <sphereGeometry args={[b.radius * (1 + L.atmoHeight * 7), 48, 32]} />
+          <shaderMaterial
+            uniforms={atmo}
+            vertexShader={atmoVert}
+            fragmentShader={atmoFrag}
+            side={THREE.BackSide}
+            transparent
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+      )}
     </group>
   );
 }
 
+/** What you see through the gaps in HoloTracker's plating. */
+function StationCore({ radius, accent }: { radius: number; accent: string }) {
+  return (
+    <>
+      <mesh>
+        <sphereGeometry args={[radius * 0.3, 24, 16]} />
+        <meshBasicMaterial color={new THREE.Color(accent).multiplyScalar(0.7)} toneMapped={false} />
+      </mesh>
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[radius * 0.62, radius * 0.03, 6, 48]} />
+        <meshBasicMaterial color="#2c2536" />
+      </mesh>
+    </>
+  );
+}
+
 function PlanetRing({ b }: { b: Body }) {
-  const r = ringRadii(b)!;
+  const r = b.look.ring!;
   const uniforms = useMemo(
     () => ({
       uColor: { value: new THREE.Color(r.color) },
-      uCenter: { value: b.center.clone() },
-      uInner: { value: r.inner },
-      uOuter: { value: r.outer },
+      uCenter: { value: b.center },
+      uRadius: { value: b.radius },
+      uInner: { value: r.inner * b.radius },
+      uOuter: { value: r.outer * b.radius },
       uSeed: { value: (b.id.length * 7.3) % 11 },
-      uOpacity: { value: r.opacity * 1.2 },
+      uOpacity: { value: r.opacity },
+      uRinglet: { value: r.ringlet ? 1 : 0 },
+      uNormal: { value: b.pole },
+      uLightDir: { value: LIGHT_DIR },
     }),
     [b, r],
   );
+  const outer = r.ringlet ? r.outer + (r.outer - r.inner) * 0.36 : r.outer;
 
   return (
     <group position={b.center} quaternion={b.quat}>
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[r.inner, r.outer, 192, 1]} />
+        <ringGeometry args={[r.inner * b.radius, outer * b.radius, 256, 1]} />
         <shaderMaterial
           uniforms={uniforms}
           vertexShader={ringVert}
@@ -104,48 +153,17 @@ function PlanetRing({ b }: { b: Body }) {
           transparent
           side={THREE.DoubleSide}
           depthWrite={false}
-          blending={THREE.AdditiveBlending}
         />
       </mesh>
     </group>
   );
 }
 
-/** HoloTracker: a frame around a small world, not a finished one. */
-function Scaffold({ radius, accent }: { radius: number; accent: string }) {
-  const bars = useMemo(() => {
-    const out: { p: [number, number, number]; s: [number, number, number] }[] = [];
-    const r = radius * 1.4;
-    const t = radius * 0.035;
-    for (let i = 0; i < 6; i++) {
-      const a = (i / 6) * TAU;
-      out.push({ p: [Math.cos(a) * r, 0, Math.sin(a) * r], s: [t, radius * 2.3, t] });
-    }
-    out.push({ p: [0, radius * 1.15, 0], s: [r * 2, t, t] });
-    out.push({ p: [0, radius * 1.15, 0], s: [t, t, r * 2] });
-    out.push({ p: [0, -radius * 1.15, 0], s: [r * 2, t, t] });
-    return out;
-  }, [radius]);
-
-  return (
-    <group rotation={[0.3, 0.6, 0.15]}>
-      {bars.map((bar, i) => (
-        <mesh key={i} position={bar.p} scale={bar.s}>
-          <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial
-            color="#4d4658"
-            metalness={0.35}
-            roughness={0.6}
-            emissive={accent}
-            emissiveIntensity={0.05}
-          />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-/** The dock: a thin ring whose lights tick round it, plus any beacon. */
+/**
+ * The dock: a necklace of lights with a travelling pulse, strung on a
+ * hairline. HoloTracker's is half built — a metal arc, lights only where
+ * the arc is finished.
+ */
 function Dock({
   b,
   pool,
@@ -157,73 +175,95 @@ function Dock({
   frozen: boolean;
   index: number;
 }) {
+  const station = b.look.kind === KIND.station;
+  const arc = station ? 0.62 : 1;
   const base = useMemo(() => pool.allocNamed(`dock:${b.id}`, DOCK_LIGHTS), [pool, b.id]);
-  const beaconSlot = useMemo(
-    () => (b.def.beacon ? pool.allocNamed(`beacon:${b.id}`, 1) : -1),
-    [pool, b.id, b.def.beacon],
+  const markerSlot = useMemo(
+    () => (b.marker ? pool.allocNamed(`marker:${b.id}`, 1) : -1),
+    [pool, b.id, b.marker],
   );
   const rgb = useMemo(() => hexToRGB(b.accent), [b.accent]);
-  const beaconRgb = useMemo(
-    () => (b.def.beacon ? hexToRGB(b.def.beacon.color) : rgb),
-    [b.def.beacon, rgb],
+  const markerRgb = useMemo(
+    () => (b.look.marker ? hexToRGB(b.look.marker.glow) : rgb),
+    [b.look.marker, rgb],
   );
   const p = useRef(new THREE.Vector3());
-
-  // the night side faces away from the light
-  const night = useMemo(
-    () =>
-      b.center
-        .clone()
-        .addScaledVector(b.center.clone().sub(LIGHT_POS).normalize(), b.radius * 1.03),
+  const markerAt = useMemo(
+    () => (b.marker ? b.center.clone().addScaledVector(b.marker, b.radius * 1.012) : null),
     [b],
   );
 
+  const line = useMemo(() => {
+    const pts: THREE.Vector3[] = [];
+    const n = 160;
+    for (let i = 0; i <= n; i++) {
+      const a = (i / n) * TAU * arc;
+      pts.push(new THREE.Vector3(Math.cos(a) * b.dockR, 0, Math.sin(a) * b.dockR));
+    }
+    return new THREE.BufferGeometry().setFromPoints(pts);
+  }, [b.dockR, arc]);
+
   useFrame((state) => {
     const t = frozen ? index * 1.7 : state.clock.elapsedTime;
-    const head = (t * 0.17 + index * 0.37) % 1;
+    const head = (t * 0.11 + index * 0.37) % 1;
 
     for (let i = 0; i < DOCK_LIGHTS; i++) {
       const f = i / DOCK_LIGHTS;
+      if (f > arc) {
+        pool.hide(base + i);
+        continue;
+      }
       let dd = Math.abs(f - head);
       dd = Math.min(dd, 1 - dd);
-      const lit = 0.18 + 0.85 * Math.pow(Math.max(0, 1 - dd * 6), 3);
+      const lit = 0.16 + 0.84 * Math.pow(Math.max(0, 1 - dd * 7), 3);
+      // the two ends of an unfinished arc blink like work lights
+      const endBlink =
+        station && (i === 0 || f + 1 / DOCK_LIGHTS > arc)
+          ? 0.5 + 0.5 * Math.sin(t * 4 + i)
+          : 1;
       p.current
         .set(Math.cos(f * TAU), 0, Math.sin(f * TAU))
         .multiplyScalar(b.dockR)
         .applyQuaternion(b.quat)
         .add(b.center);
-      pool.set(base + i, p.current.x, p.current.y, p.current.z, rgb[0], rgb[1], rgb[2], 1.1, lit * 0.55);
+      pool.set(base + i, p.current.x, p.current.y, p.current.z, rgb[0], rgb[1], rgb[2], 1.1, lit * 0.75 * endBlink);
     }
 
-    if (beaconSlot >= 0 && b.def.beacon) {
-      const pulse = frozen ? 0.85 : 0.78 + 0.22 * Math.sin(t * 0.9 + index);
+    if (markerSlot >= 0 && markerAt && b.look.marker) {
+      const pulse = frozen ? 0.85 : 0.8 + 0.2 * Math.sin(t * 0.9 + index);
       pool.set(
-        beaconSlot,
-        night.x,
-        night.y,
-        night.z,
-        beaconRgb[0],
-        beaconRgb[1],
-        beaconRgb[2],
-        b.def.beacon.size * 1.3,
-        pulse,
+        markerSlot,
+        markerAt.x,
+        markerAt.y,
+        markerAt.z,
+        markerRgb[0],
+        markerRgb[1],
+        markerRgb[2],
+        1.6 * b.look.marker.size,
+        pulse * 0.8,
       );
     }
-    pool.flush();
   });
 
   return (
     <group position={b.center} quaternion={b.quat}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[b.dockR, b.radius * 0.016, 6, 128]} />
-        <meshStandardMaterial
-          color="#2c2638"
-          metalness={0.3}
-          roughness={0.7}
-          emissive={b.accent}
-          emissiveIntensity={0.05}
-        />
-      </mesh>
+      {!station && (
+        <lineLoop geometry={line}>
+          <lineBasicMaterial
+            color={b.accent}
+            transparent
+            opacity={0.13}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </lineLoop>
+      )}
+      {station && (
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[b.dockR, b.radius * 0.022, 6, 96, TAU * arc]} />
+          <meshStandardMaterial color="#3a3545" metalness={0.6} roughness={0.45} />
+        </mesh>
+      )}
     </group>
   );
 }
@@ -243,7 +283,7 @@ export default function Planets({
         <World key={b.id} b={b} segments={segments} frozen={frozen} />
       ))}
       {allBodies
-        .filter((b) => b.def.ring)
+        .filter((b) => b.look.ring)
         .map((b) => (
           <PlanetRing key={`ring:${b.id}`} b={b} />
         ))}

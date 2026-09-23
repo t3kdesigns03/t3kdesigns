@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { allBodies, hub, worlds, type Body } from "./layout";
+import { GALAXY_DIR, allBodies, hub, worlds, type Body } from "./layout";
 import { exploreStore } from "./store";
 
 /**
@@ -13,8 +13,11 @@ const MAX_SPEED = 18;
 /** space has no drag; a toy does, or you drift into the void forever */
 const DRAG = 0.36;
 const STEER = 2.4;
-/** world units per second along a parking orbit */
-const ORBIT_SPEED = 2.4;
+/** parked, the craft drifts round slowly: about two minutes a lap */
+const ORBIT_OMEGA = 0.05;
+/** park a little short of a landmark, so the craft does not sit on it */
+const LANDMARK_LEAD = 0.28;
+const TAU = Math.PI * 2;
 /** soft edge of the map */
 const BOUNDARY = 150;
 
@@ -31,6 +34,8 @@ export const flight = {
   /** smoothed heading — what the hull and the camera follow */
   fwd: new THREE.Vector3(0, 0, 1),
   quat: new THREE.Quaternion(),
+  /** the craft's (and the parked camera's) sense of up: the pole it orbits */
+  up: new THREE.Vector3(0, 1, 0),
   bank: 0,
   /** 0..1, drives the ion burn */
   thrust: 0,
@@ -43,6 +48,8 @@ export const flight = {
     angle: 0,
     /** 0 → 1 while settling onto the circle, so entry never snaps */
     blend: 1,
+    /** an angle to glide round to after arriving (a landmark in view), or null */
+    goal: null as number | null,
   },
   ease: {
     from: new THREE.Vector3(),
@@ -84,22 +91,16 @@ function orbitPoint(b: Body, out: THREE.Vector3) {
 }
 
 /**
- * Settle onto a circle through the current position, in a plane biased
- * toward the equator so the planet reads level on screen, turning the way
- * we were already travelling.
+ * Settle onto the world's parking circle — square to its pole, so the
+ * rings and the terminator always sit the same way in shot — starting from
+ * wherever we arrived and turning the way we were already travelling.
  */
 function enterOrbit(b: Body) {
+  const n = b.pole;
   const u = _a.copy(flight.pos).sub(b.center);
-  if (u.lengthSq() < 1e-6) u.set(1, 0, 0);
+  u.addScaledVector(n, -u.dot(n));
+  if (u.lengthSq() < 1e-6) u.copy(n).cross(FWD_Z);
   u.normalize();
-
-  const n = _b.copy(u).cross(flight.vel);
-  if (n.lengthSq() < 1e-4) n.copy(u).cross(UP);
-  if (n.lengthSq() < 1e-4) n.set(1, 0, 0);
-  n.normalize();
-  n.addScaledVector(UP, n.dot(UP) >= 0 ? 1.4 : -1.4).normalize();
-
-  u.addScaledVector(n, -u.dot(n)).normalize();
   const v = _c.copy(n).cross(u);
   if (v.dot(flight.vel) < 0) v.negate();
 
@@ -107,6 +108,15 @@ function enterOrbit(b: Body) {
   flight.orbit.v.copy(v);
   flight.orbit.angle = 0;
   flight.orbit.blend = 0;
+  flight.orbit.goal = null;
+
+  // worlds with a landmark: swing round until it is in shot
+  if (b.marker) {
+    const m = _b.copy(b.marker).addScaledVector(n, -b.marker.dot(n));
+    let g = Math.atan2(m.dot(v), m.dot(u)) - LANDMARK_LEAD;
+    g = ((g % TAU) + TAU) % TAU;
+    if (g > 0.05) flight.orbit.goal = g;
+  }
 
   flight.mode = "orbit";
   flight.body = b;
@@ -120,18 +130,18 @@ export function spawn() {
   flight.target = null;
   flight.ignore = null;
   flight.mode = "orbit";
-  // chosen by projection: the hub arrives half-lit, and the orbit carries
-  // the camera round to a backlit hub with the spiral rising behind it
-  const a = THREE.MathUtils.degToRad(115);
-  flight.orbit.u.set(Math.cos(a), 0, Math.sin(a));
-  flight.orbit.v.copy(UP).cross(flight.orbit.u).normalize();
-  flight.orbit.angle = 0;
+  // start on the far side from the distant spiral, so it hangs behind the hub
+  const u = flight.orbit.u.copy(GALAXY_DIR).negate();
+  u.addScaledVector(b.pole, -u.dot(b.pole)).normalize();
+  flight.orbit.v.copy(b.pole).cross(u).normalize();
+  flight.orbit.angle = -0.35;
   flight.orbit.blend = 1;
   orbitPoint(b, flight.pos);
   tangentAt(flight.fwd);
-  flight.vel.copy(flight.fwd).multiplyScalar(ORBIT_SPEED);
+  flight.vel.copy(flight.fwd).multiplyScalar(ORBIT_OMEGA * b.orbitR);
   flight.thrust = 0;
   flight.bank = 0;
+  flight.up.copy(b.pole);
   exploreStore.setParked(b.id);
 }
 
@@ -155,6 +165,8 @@ export function flyTo(b: Body) {
     // no burn: ease the whole rig to a parking point, facing the planet
     flight.ease.from.copy(flight.pos);
     const dir = _a.copy(flight.pos).sub(b.center);
+    if (b.marker) dir.copy(b.marker);
+    dir.addScaledVector(b.pole, -dir.dot(b.pole));
     if (dir.lengthSq() < 1e-6) dir.set(0, 0, 1);
     dir.normalize();
     flight.ease.to.copy(b.center).addScaledVector(dir, b.orbitR);
@@ -198,14 +210,22 @@ export function step(dt: number): boolean {
 
   if (f.mode === "orbit" && f.body) {
     const b = f.body;
-    if (!f.reduced) f.orbit.angle += (ORBIT_SPEED / b.orbitR) * dt;
+    let w = ORBIT_OMEGA;
+    const goal = f.orbit.goal;
+    if (goal !== null) {
+      const rem = goal - f.orbit.angle;
+      if (rem <= 0.01) f.orbit.goal = null;
+      else w += Math.min(0.85, rem * 0.6);
+    }
+    if (!f.reduced) f.orbit.angle += w * dt;
+    f.thrust *= Math.exp(-3 * dt);
     f.orbit.blend = Math.min(1, f.orbit.blend + dt * 0.7);
     orbitPoint(b, _a);
     const k = 1 - Math.exp(-(1.5 + 6 * f.orbit.blend) * dt);
     f.pos.lerp(_a, k);
     tangentAt(_b);
-    f.vel.copy(_b).multiplyScalar(ORBIT_SPEED);
-    moving = !f.reduced || f.pos.distanceToSquared(_a) > 1e-4;
+    f.vel.copy(_b).multiplyScalar(w * b.orbitR);
+    moving = !f.reduced || f.pos.distanceToSquared(_a) > 1e-4 || f.thrust > 0.02;
   } else if (f.mode === "travel" && f.target) {
     const b = f.target;
     const off = _a.copy(f.pos).sub(b.center);
@@ -225,7 +245,7 @@ export function step(dt: number): boolean {
 
     const toEntry = entry.sub(f.pos);
     const d = toEntry.length();
-    const speed = Math.min(MAX_SPEED, ORBIT_SPEED + d * 1.1);
+    const speed = Math.min(MAX_SPEED, 1.5 + d * 1.1);
     const desired = toEntry.multiplyScalar(speed / Math.max(d, 1e-4));
 
     // steer around anything in the way
@@ -287,14 +307,16 @@ export function step(dt: number): boolean {
   if (f.mode === "orbit") tangentAt(_c);
   else if (f.vel.lengthSq() > 0.16) _c.copy(f.vel).normalize();
   else _c.copy(f.fwd);
-  f.fwd.lerp(_c, 1 - Math.exp(-4 * dt)).normalize();
+  f.fwd.lerp(_c, 1 - Math.exp(-6 * dt)).normalize();
 
-  const turn = Math.asin(THREE.MathUtils.clamp(prev.cross(f.fwd).dot(UP), -1, 1)) / Math.max(dt, 1e-4);
+  f.up.lerp(f.mode === "orbit" && f.body ? f.body.pole : UP, 1 - Math.exp(-1.5 * dt)).normalize();
+  const turn = Math.asin(THREE.MathUtils.clamp(prev.cross(f.fwd).dot(f.up), -1, 1)) / Math.max(dt, 1e-4);
   f.bank = THREE.MathUtils.damp(f.bank, THREE.MathUtils.clamp(-turn * 0.45, -0.7, 0.7), 3, dt);
 
-  const up = Math.abs(f.fwd.dot(UP)) > 0.98 ? FWD_Z : UP;
+  const up = Math.abs(f.fwd.dot(f.up)) > 0.98 ? FWD_Z : f.up;
   _m.lookAt(f.fwd, ZERO, up);
   f.quat.setFromRotationMatrix(_m).multiply(_q.setFromAxisAngle(FWD_Z, f.bank));
 
   return moving || f.thrust > 0.02;
 }
+

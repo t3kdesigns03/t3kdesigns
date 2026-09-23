@@ -1,26 +1,19 @@
 import * as THREE from "three";
 import { projects, type Project } from "@/lib/projects";
 import { srand } from "@/components/scene/color";
-import {
-  OUTER,
-  WORLDS,
-  type WorldDef,
-} from "@/components/scene/traffic/worlds";
+import { LOOKS, type Look } from "./looks";
 
 /**
- * The /explore map. Same eight worlds and the same visual definitions as the
- * homepage, but laid out to be flown through rather than looked at: roughly
- * 150 units across, hub at the origin, a 40-unit hop taking ~3 seconds.
- *
- * Radii are about ten times the homepage's — here the planets are the
- * subject, not the trim.
+ * The /explore map: roughly 150 units across, hub at the origin, a 40-unit
+ * hop taking ~3 seconds. Radii are about ten times the homepage's — here
+ * the planets are the subject, not the trim.
  */
 export type Body = {
   id: string;
   name: string;
   /** null for scenery: drawn, collided with, never targeted */
   project: Project | null;
-  def: WorldDef;
+  look: Look;
   center: THREE.Vector3;
   radius: number;
   /** dock ring radius (projects only) */
@@ -28,88 +21,118 @@ export type Body = {
   /** parking orbit radius — always clear of the dock ring */
   orbitR: number;
   accent: string;
-  /** orientation of the dock ring / equatorial plane */
+  /** spin axis; rings, dock and parking orbit all lie square to it */
+  pole: THREE.Vector3;
+  /** local +Y → pole, with a per-world twist */
   quat: THREE.Quaternion;
+  /** world-space unit direction of the landmark, if the world has one */
+  marker: THREE.Vector3 | null;
 };
 
-const PLACE: Record<string, { at: [number, number, number]; r: number }> = {
-  t3kdesigns: { at: [0, 0, 0], r: 2.4 },
+const PLACE: Record<string, { at: [number, number, number]; r: number; dock?: number }> = {
+  t3kdesigns: { at: [0, 0, 0], r: 2.4, dock: 2.45 },
   spydernetwork: { at: [36, 7, -26], r: 2.2 },
   glowdaily: { at: [-32, -5, -34], r: 1.9 },
   "stuart-softball": { at: [8, -12, -60], r: 1.5 },
   "sob-rentals": { at: [-54, 9, 6], r: 2.0 },
   "calming-the-chaos": { at: [50, -7, 22], r: 1.65 },
-  holotracker: { at: [-22, 13, 42], r: 1.25 },
+  holotracker: { at: [-22, 13, 42], r: 1.25, dock: 2.1 },
   porchlight: { at: [20, 11, 50], r: 1.45 },
 };
 
 /**
- * The key light comes from the same direction as the galaxy hanging in the
- * sky. On the homepage every world is lit by the galactic core; out here the
- * core is that distant spiral, so looking toward it you see the worlds
- * backlit, rimmed by their atmospheres.
+ * One key light, high above the plane the worlds orbit in. Every parking
+ * orbit lies square to its world's pole, and the poles lean toward this
+ * light, so a parked camera — which sits a little above the orbit — always
+ * sees a lit world with a band of night along its lower edge. Park anywhere
+ * on the circle and the terminator is in shot.
  */
-export const GALAXY_DIR = new THREE.Vector3(-0.62, 0.3, -0.72).normalize();
-export const LIGHT_POS = GALAXY_DIR.clone().multiplyScalar(900);
+export const LIGHT_DIR = new THREE.Vector3(0.3, 1, 0.2).normalize();
+export const LIGHT_POS = LIGHT_DIR.clone().multiplyScalar(900);
+/** dim cool fill from the opposite quarter, so night is dark, not void */
+export const FILL_DIR = new THREE.Vector3(-0.5, -0.35, 0.8).normalize();
 
-function orientation(seed: number) {
-  return new THREE.Quaternion().setFromEuler(
-    new THREE.Euler(
-      (srand(seed * 2.7) - 0.5) * 0.7,
-      srand(seed * 5.3) * Math.PI * 2,
-      (srand(seed * 9.1) - 0.5) * 0.5,
-    ),
-  );
+/** a unit vector square to `n`, at angle `a` around it */
+function around(n: THREE.Vector3, a: number) {
+  const ref = Math.abs(n.x) < 0.9 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 0, 1);
+  const u = ref.addScaledVector(n, -ref.dot(n)).normalize();
+  const v = new THREE.Vector3().crossVectors(n, u);
+  return u.multiplyScalar(Math.cos(a)).addScaledVector(v, Math.sin(a));
+}
+
+/**
+ * The distant spiral hangs just below the orbital plane, which is where a
+ * parked camera looks: behind the world, not above it.
+ */
+export const GALAXY_DIR = around(LIGHT_DIR, 3.7)
+  .multiplyScalar(Math.cos(THREE.MathUtils.degToRad(-17)))
+  .addScaledVector(LIGHT_DIR, Math.sin(THREE.MathUtils.degToRad(-17)))
+  .normalize();
+
+function orient(seed: number) {
+  const pole = LIGHT_DIR.clone()
+    .add(new THREE.Vector3(srand(seed * 2.7) - 0.5, 0, srand(seed * 9.1) - 0.5).multiplyScalar(0.36))
+    .normalize();
+  const quat = new THREE.Quaternion()
+    .setFromUnitVectors(new THREE.Vector3(0, 1, 0), pole)
+    .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), srand(seed * 5.3) * Math.PI * 2));
+  return { pole, quat };
+}
+
+/** well into the night side, where a single light reads */
+function markerDir(azimuth: number) {
+  return around(LIGHT_DIR, azimuth)
+    .multiplyScalar(Math.cos(0.5))
+    .addScaledVector(LIGHT_DIR, -Math.sin(0.5))
+    .normalize();
 }
 
 export const worlds: Body[] = projects
-  .filter((p) => PLACE[p.id] && WORLDS[p.id])
+  .filter((p) => PLACE[p.id] && LOOKS[p.id])
   .map((p, i) => {
-    const def = WORLDS[p.id];
-    const { at, r } = PLACE[p.id];
-    const dockR = r * (def.dockScale ?? 1.95);
+    const look = LOOKS[p.id];
+    const { at, r, dock } = PLACE[p.id];
+    const dockR = r * (dock ?? 1.95);
+    const { pole, quat } = orient(i + 1);
     return {
       id: p.id,
       name: p.name,
       project: p,
-      def,
+      look,
       center: new THREE.Vector3(...at),
       radius: r,
       dockR,
-      orbitR: Math.max(dockR * 1.22, r * 2.45),
+      orbitR: Math.max(dockR * 1.22, r * 3.1),
       accent: p.color,
-      quat: orientation(i + 1),
+      pole,
+      quat,
+      marker: look.marker ? markerDir(look.marker.azimuth) : null,
     };
   });
 
-const giantDef = OUTER.find((o) => o.id === "outer-giant")!;
-const iceDef = OUTER.find((o) => o.id === "outer-ice")!;
+function sceneryBody(id: string, at: [number, number, number], r: number, seed: number): Body {
+  const look = LOOKS[id];
+  const { pole, quat } = orient(seed);
+  return {
+    id,
+    name: "",
+    project: null,
+    look,
+    center: new THREE.Vector3(...at),
+    radius: r,
+    dockR: 0,
+    orbitR: 0,
+    accent: look.atmo,
+    pole,
+    quat,
+    marker: null,
+  };
+}
 
+/** Two scenery bodies, low on the sky so parked shots catch them. */
 export const scenery: Body[] = [
-  {
-    id: "scenery-giant",
-    name: "",
-    project: null,
-    def: giantDef,
-    center: new THREE.Vector3(-110, 34, -120),
-    radius: 11,
-    dockR: 0,
-    orbitR: 0,
-    accent: giantDef.atmo,
-    quat: orientation(40),
-  },
-  {
-    id: "scenery-ice",
-    name: "",
-    project: null,
-    def: iceDef,
-    center: new THREE.Vector3(120, -30, -70),
-    radius: 4.5,
-    dockR: 0,
-    orbitR: 0,
-    accent: iceDef.atmo,
-    quat: orientation(41),
-  },
+  sceneryBody("scenery-giant", [-118, -34, -104], 11, 40),
+  sceneryBody("scenery-ice", [118, -26, -66], 4.5, 41),
 ];
 
 export const allBodies: Body[] = [...worlds, ...scenery];
@@ -118,11 +141,3 @@ export const hub = worlds.find((w) => w.id === "t3kdesigns") ?? worlds[0];
 
 export const worldById = (id: string | null) =>
   id ? worlds.find((w) => w.id === id) ?? null : null;
-
-/** Planetary ring radii scale with the body; the defs are in homepage units. */
-export function ringRadii(b: Body) {
-  const r = b.def.ring;
-  if (!r) return null;
-  const k = b.radius / b.def.radius;
-  return { inner: r.inner * k, outer: r.outer * k, color: r.color, opacity: r.opacity };
-}

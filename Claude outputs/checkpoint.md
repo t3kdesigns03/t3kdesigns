@@ -1,6 +1,6 @@
 # T3KDESIGNS — PROJECT HANDOFF
 
-**Written:** 2026-09-22 · **Updated:** 2026-09-23 · **Repo:** `E:\T3KDesigns\T3KDESIGNSHOME` → `github.com/t3kdesigns03/t3kdesigns`
+**Written:** 2026-09-22 · **Updated:** 2026-09-23 (visual pass) · **Repo:** `E:\T3KDesigns\T3KDESIGNSHOME` → `github.com/t3kdesigns03/t3kdesigns`
 
 Pick this up in a fresh chat. Everything needed to resume is here — current
 state, hard-won gotchas, and the `/explore` micro-game (now **built** — see §0;
@@ -47,6 +47,35 @@ game between the eight worlds"**. Push from Git Bash.
 - WebGL disabled → void + names as links (Porchlight plain text).
 - `/` → "Fly between them →" → `/explore` → `T3K` → `/`; no prefetch of /explore.
 - `npm run build`, `tsc`, `eslint` clean. `/` ships no explore code.
+
+### Visual pass (T3KDESIGNS-EXPLORE-VISUALS.md) — done
+- `/explore` no longer uses the homepage world shader or particle Galaxy.
+  New explore-only files: `looks.ts` (per-world recipe + palette) and
+  `shaders.ts` (planet, atmosphere shell, ring, hull, ion spike, sky band,
+  spiral impostor). `world.ts` and `Galaxy.tsx` were restored to their
+  pre-explore versions, so `/` is back to its original shader code.
+- Eight distinct bodies via a `kind` switch: Studio = dark basalt + faint
+  lilac seams + slender ringed hub; Spyder = ocean/continents/cloud + coastal
+  light string; GlowDaily = amber dunes + thick warm limb + tea-gold towns;
+  SSL = cratered rock + floodlit stadium on the night side; SOB = turquoise
+  lagoons + sun glint + marina specks; CTC = graphite moon + thin teal veins
+  + outpost; HoloTracker = half-plated lattice station + reactor + half-built
+  dock arc; Porchlight = dark warm world + one porch light.
+- Night lights are anti-aliased cell dots (energy-conserving below a pixel),
+  never Perlin speckle. Real limb from a back-faced additive atmosphere shell.
+- Light is high over the orbital plane; each world's pole leans toward it and
+  the parking orbit is square to the pole, so every parked shot is lit on top
+  with a band of night (and lights) along the bottom.
+- Parked camera is composed, not chased (`frameOrbit` in Rig.tsx): world ≈ 1/3
+  of the frame (62% of width on portrait), craft in the lower third, 16° over
+  the plane. Orbit drift slowed to ~2 min/lap. Worlds with a landmark
+  (SSL, CTC, Porchlight) swing round on arrival until it is in shot.
+- Craft: faceted courier wedge (no wings/fin), flat facets + smoothed-normal
+  rim/sheen, lilac visor slit, warm/ice pin nav lights, short additive ion
+  spike only while thrusting.
+- Sky: stars + a faint band along the orbital plane + a one-quad spiral
+  galaxy impostor below the plane (visible behind parked worlds).
+- `/` initial JS unchanged at 222.5 KiB gz; explore chunk ~12 KiB gz; no textures.
 
 ### Deliberate deviation: no bloom on `/explore`
 Any shared use of `@react-three/postprocessing` (or three's

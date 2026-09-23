@@ -39,13 +39,6 @@ export const worldFrag = /* glsl */ `
   uniform float uAtmo;      // rim thickness
   uniform float uBands;     // 1 = banded gas giant, 0 = rocky continents
   uniform float uAmbient;
-  /**
-   * 0 on the homepage (never set, so WebGL defaults it to 0 and the output is
-   * unchanged). 1 on /explore, where a world fills half the screen and the
-   * far-view settlement dusting would read as noise: settlements then keep
-   * to coasts and to a few populated regions.
-   */
-  uniform float uCloseUp;
 
   varying vec3 vN;
   varying vec3 vWP;
@@ -131,8 +124,7 @@ export const worldFrag = /* glsl */ `
       float coast =
         smoothstep(0.36, 0.46, land) * (1.0 - smoothstep(0.52, 0.66, land));
       float city = smoothstep(0.58, 0.8, grain) * smoothstep(0.45, 0.78, fine);
-      float region = mix(1.0, smoothstep(0.47, 0.62, fbm(sp * 1.35 + 7.0)), uCloseUp);
-      city *= mix(0.22 + 0.78 * coast, 0.03 + 0.97 * coast, uCloseUp) * region;
+      city *= 0.22 + 0.78 * coast;
       col += uAccent * city * night * uCity * 1.45;
     }
 

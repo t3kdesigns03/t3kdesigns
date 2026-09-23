@@ -23,14 +23,14 @@ const BUDGET: Record<
   Tier,
   {
     stars: number;
-    galaxy: { disk: number; bulge: number; dust: number };
+    band: number;
     nebulae: number;
     segments: [number, number];
   }
 > = {
-  2: { stars: 7000, galaxy: { disk: 26000, bulge: 6000, dust: 5000 }, nebulae: 4, segments: [72, 54] },
-  1: { stars: 5000, galaxy: { disk: 16000, bulge: 4000, dust: 3500 }, nebulae: 3, segments: [56, 42] },
-  0: { stars: 3200, galaxy: { disk: 10000, bulge: 2600, dust: 2200 }, nebulae: 2, segments: [44, 32] },
+  2: { stars: 9000, band: 7000, nebulae: 4, segments: [72, 54] },
+  1: { stars: 6500, band: 5000, nebulae: 3, segments: [56, 42] },
+  0: { stars: 4200, band: 3200, nebulae: 2, segments: [44, 32] },
 };
 
 export default function ExploreCanvas({
@@ -84,14 +84,14 @@ export default function ExploreCanvas({
         transition: "opacity 900ms ease",
       }}
     >
-      {/* one key light, from the direction of the spiral in the sky */}
-      <directionalLight position={LIGHT_POS} intensity={9} color="#ffe4c0" />
-      <ambientLight color="#5a4f8a" intensity={0.4} />
+      {/* key light high above the orbital plane; only the dock's metal uses it */}
+      <directionalLight position={LIGHT_POS} intensity={6} color="#fff0de" />
+      <ambientLight color="#5a4f8a" intensity={0.5} />
 
       <Backdrop
         frozen={reduced}
         stars={budget.stars}
-        galaxy={budget.galaxy}
+        band={budget.band}
         nebulae={budget.nebulae}
       />
       <Planets pool={pool} frozen={reduced} segments={budget.segments} />
