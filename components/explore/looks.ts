@@ -316,3 +316,27 @@ export const LOOKS: Record<string, Look> = {
     spin: 0.012,
   },
 };
+
+/**
+ * The HUD's Director chips: a short label for tight rows (the full name and
+ * one-liner still come from lib/projects.ts and lib/outerProjects.ts), and
+ * — where the surface palette above would not read at 30px — the three
+ * tones the little sphere is painted in: lit, mid, shadow.
+ */
+export const CHIP: Record<string, { short: string; tones?: [string, string, string] }> = {
+  t3kdesigns: { short: "Studio", tones: ["#6a5c9c", "#241d3a", "#08070d"] },
+  spydernetwork: { short: "Spyder", tones: ["#4f8fe0", "#123f78", "#041428"] },
+  glowdaily: { short: "GlowDaily", tones: ["#f4b865", "#b0602a", "#3a1a0a"] },
+  "stuart-softball": { short: "SSL", tones: ["#8a877c", "#3a3833", "#141416"] },
+  "sob-rentals": { short: "SOB", tones: ["#46d2cf", "#0f7f8f", "#03203a"] },
+  "calming-the-chaos": { short: "CTC", tones: ["#5f7372", "#262e30", "#0e1213"] },
+  holotracker: { short: "HoloTracker", tones: ["#8a8398", "#3b3846", "#1c1a22"] },
+  porchlight: { short: "Porchlight", tones: ["#7a4a2c", "#2a1810", "#0b0705"] },
+  sts: { short: "STS" },
+  georgeandnicks: { short: "G&N", tones: ["#8a3a24", "#3a1d15", "#140e0c"] },
+  kimscleaning: { short: "Kim's", tones: ["#f2fafa", "#b9d3d5", "#6f8d93"] },
+  appanoosegolf: { short: "Appanoose", tones: ["#6fcf62", "#2f6a2a", "#0f2410"] },
+  barberstucco: { short: "Barber" },
+  debtangel: { short: "Debt Angel" },
+  donjulio: { short: "Don Julio" },
+};

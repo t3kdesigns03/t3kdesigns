@@ -2,6 +2,7 @@
 
 import { EASE } from "@/lib/motion";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { useScene } from "@/lib/store";
 import { SITE } from "@/lib/theme";
 
@@ -16,6 +17,7 @@ const rise = {
 
 export default function Hero() {
   const explore = useScene((s) => s.explore);
+  const failed = useScene((s) => s.webglFailed);
 
   return (
     <section
@@ -81,6 +83,12 @@ export default function Hero() {
             <a href="#contact" className="pill pill-ghost pointer-events-auto">
               Start a project
             </a>
+            {!failed && (
+              // no prefetch: the homepage must never download the game
+              <Link href="/explore" prefetch={false} className="pill pill-ghost pointer-events-auto">
+                Explore →
+              </Link>
+            )}
           </motion.div>
         </div>
       </div>

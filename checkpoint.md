@@ -1,6 +1,6 @@
 # T3KDESIGNS — PROJECT HANDOFF
 
-**Written:** 2026-09-22 · **Updated:** 2026-09-23 (visual pass, outer ring) · **Repo:** `E:\T3KDesigns\T3KDESIGNSHOME` → `github.com/t3kdesigns03/t3kdesigns`
+**Written:** 2026-09-22 · **Updated:** 2026-09-23 (visual pass, outer ring, director chips) · **Repo:** `E:\T3KDesigns\T3KDESIGNSHOME` → `github.com/t3kdesigns03/t3kdesigns`
 
 Pick this up in a fresh chat. Everything needed to resume is here — current
 state, hard-won gotchas, and the `/explore` micro-game (now **built** — see §0;
@@ -98,6 +98,22 @@ game between the eight worlds"**. Push from Git Bash.
   Captured dock ring shows 12 sparse ticks.
 - Pips: two rows (inner eight / outer seven), 44px tap targets, active pip lit.
 - `/` initial JS still 222.5 KiB gz; explore-only lazy code ~23 KiB gz.
+
+### Director chips + phone Explore door (T3KDESIGNS-EXPLORE-DIRECTOR-AND-MOBILE.md) — done
+- `/explore` bottom HUD: the dots are now Director chips (`components/explore/Chips.tsx`):
+  an SVG mini world painted from the world's palette (ring, landmark light,
+  station frame where it has one) + a short name. Inner / outer groups, Studio
+  leads the inner row. Desktop: rows wrap, glass hover tip with full name + one-liner.
+  Phone: each group is a snap-scrolling row with soft edges, 44px chips, and
+  the active chip scrolls to centre when the autopilot takes it. Short names
+  and chip tones live in `CHIP` in looks.ts; full names come from the project files.
+- Homepage: EXPLORE pill shows at every width. Below 420px the "designs"
+  half of the wordmark hides so work / studio / contact / explore all fit
+  (checked at 360 and 390, no overflow). Hero has a third ghost pill
+  `Explore →` (/explore, prefetch off, hidden if WebGL failed). The Work
+  section's "Fly between them →" stays as a second door.
+- `/` initial JS 222.57 KiB gz (+~70 bytes for the hero link). No explore code on `/`.
+- Next phase (per B): marketing / advertising.
 
 ### Deliberate deviation: no bloom on `/explore`
 Any shared use of `@react-three/postprocessing` (or three's

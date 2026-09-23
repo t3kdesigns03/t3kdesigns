@@ -3,8 +3,9 @@
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { EASE } from "@/lib/motion";
-import { flyTo, resetFlight } from "./flight";
-import { worldById, worlds } from "./layout";
+import Chips from "./Chips";
+import { resetFlight } from "./flight";
+import { worldById } from "./layout";
 import { exploreStore, useExplore } from "./store";
 
 const toHref = (href?: string) =>
@@ -12,7 +13,7 @@ const toHref = (href?: string) =>
 
 /**
  * Almost nothing, on purpose: a way home, where you are, a hint that leaves
- * after the first touch, a dot per world as an alternative to hitting a planet,
+ * after the first touch, a chip per world as an alternative to hitting a planet,
  * and reset. No score, no map, no menu.
  */
 export default function HUD({
@@ -22,7 +23,6 @@ export default function HUD({
   reduced: boolean;
   coarse: boolean;
 }) {
-  const parked = useExplore((s) => s.parked);
   const target = useExplore((s) => s.target);
   const touched = useExplore((s) => s.touched);
   const plate = useExplore((s) => s.plate);
@@ -31,8 +31,6 @@ export default function HUD({
   const heading = worldById(target);
   const href = toHref(world?.project?.href);
   const external = !!href && href.startsWith("http");
-  const inner = worlds.filter((w) => w.ring === "inner");
-  const outer = worlds.filter((w) => w.ring === "outer");
 
   const verb = coarse ? "tap" : "click";
   const hint = reduced ? `${verb} a world` : `${verb} a world · flick to burn`;
@@ -130,8 +128,8 @@ export default function HUD({
         </AnimatePresence>
       </div>
 
-      {/* hint + the worlds: inner eight above, outer ring below */}
-      <div className="absolute inset-x-0 bottom-[calc(1rem+env(safe-area-inset-bottom))] flex flex-col items-center gap-3 px-3">
+      {/* hint + the Director chips: inner eight above, outer ring below */}
+      <div className="absolute inset-x-0 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] flex flex-col items-center gap-2.5 px-3 sm:bottom-[calc(1rem+env(safe-area-inset-bottom))]">
         <p
           aria-hidden={touched}
           className="text-[0.625rem] uppercase tracking-[0.28em] text-[rgba(232,228,255,0.5)] transition-opacity duration-700"
@@ -139,45 +137,7 @@ export default function HUD({
         >
           {hint}
         </p>
-        <div
-          role="group"
-          aria-label="Worlds"
-          className="glass pointer-events-auto flex flex-col items-center rounded-[1.6rem] px-1.5 py-0.5"
-        >
-          {[inner, outer].map((row, r) => (
-            <div key={r} className={r ? "flex border-t border-[rgba(203,182,255,0.08)]" : "flex"}>
-              {row.map((w) => {
-                const on = parked === w.id || target === w.id;
-                return (
-                  <button
-                    key={w.id}
-                    type="button"
-                    title={w.name}
-                    aria-label={`Fly to ${w.name}`}
-                    aria-pressed={on}
-                    onClick={() => flyTo(w)}
-                    className="grid h-11 place-items-center rounded-full"
-                    style={{ width: "min(2.75rem, calc((100vw - 3rem) / 8))" }}
-                  >
-                    <span
-                      aria-hidden
-                      className="block rounded-full transition-all duration-500"
-                      style={{
-                        width: on ? 11 : r ? 7 : 8,
-                        height: on ? 11 : r ? 7 : 8,
-                        background: w.accent,
-                        opacity: on ? 1 : r ? 0.85 : 1,
-                        boxShadow: on
-                          ? `0 0 0 3px rgba(5,3,10,0.9), 0 0 0 4px ${w.accent}88, 0 0 16px 2px ${w.accent}`
-                          : `0 0 8px 0 ${w.accent}66`,
-                      }}
-                    />
-                  </button>
-                );
-              })}
-            </div>
-          ))}
-        </div>
+        <Chips coarse={coarse} reduced={reduced} />
       </div>
     </div>
   );
