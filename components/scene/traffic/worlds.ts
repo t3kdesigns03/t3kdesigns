@@ -207,6 +207,21 @@ Object.assign(WORLDS, {
 } satisfies Record<string, WorldDef>);
 
 /**
+ * Perched just outside the ring. Holler! is a night-market world: dark
+ * violet asphalt, venue lights in the node's magenta, the logo's mint
+ * ripple for a ring, and one ember pin — The Fair — on the night side.
+ */
+Object.assign(WORLDS, {
+  holler: {
+    id: "holler", base: "#0b0916", base2: "#231a3d", atmo: "#e85cf0", radius: 0.2,
+    feature: 2.6, city: 1.5, cloud: 0, spec: 0.1, atmoStrength: 0.45, bands: 0,
+    spin: 0.04, tilt: 0.34, dockScale: 2.4,
+    ring: { inner: 0.29, outer: 0.39, color: "#5fe6f5", opacity: 0.8 },
+    beacon: { color: "#ff2d6a", size: 2.4 },
+  },
+} satisfies Record<string, WorldDef>);
+
+/**
  * Somewhere to fly that is not work. Scenery only — never in the dock,
  * never clickable, but far enough out that a run there reads as a journey.
  */

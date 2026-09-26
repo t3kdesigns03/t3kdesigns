@@ -19,6 +19,17 @@ function MiniWorld({ w, size }: { w: Body; size: number }) {
   const ring = L.ring;
   const station = L.kind === KIND.station;
   const tilt = -14;
+  // one ring, or — for a ripple — two thin ones fading colour outward
+  const loops = ring
+    ? ring.ripple
+      ? [
+          { rx: 12 * 1.3, ry: 3.3, color: ring.color },
+          { rx: 12 * 1.62, ry: 4.3, color: ring.color2 ?? ring.color },
+        ]
+      : [{ rx: 12 * Math.min(ring.outer, 1.62), ry: 3.6, color: ring.color }]
+    : [];
+  const width = ring?.ripple ? 0.9 : 1.4;
+  const markerGlow = L.marker && L.kind === KIND.holler ? L.marker.glow : L.lights;
 
   return (
     <svg width={size} height={size} viewBox="-20 -20 40 40" aria-hidden className="shrink-0 overflow-visible">
@@ -34,22 +45,23 @@ function MiniWorld({ w, size }: { w: Body; size: number }) {
           <stop offset="1" stopColor="#030208" stopOpacity="0.9" />
         </linearGradient>
         <radialGradient id={`${g}-g`}>
-          <stop offset="0" stopColor={L.lights} />
-          <stop offset="1" stopColor={L.lights} stopOpacity="0" />
+          <stop offset="0" stopColor={markerGlow} />
+          <stop offset="1" stopColor={markerGlow} stopOpacity="0" />
         </radialGradient>
       </defs>
 
-      {ring && (
+      {loops.map((o) => (
         <ellipse
-          rx={12 * Math.min(ring.outer, 1.62)}
-          ry={3.6}
+          key={`b${o.rx}`}
+          rx={o.rx}
+          ry={o.ry}
           transform={`rotate(${tilt})`}
           fill="none"
-          stroke={ring.color}
+          stroke={o.color}
           strokeOpacity={0.5}
-          strokeWidth={1.4}
+          strokeWidth={width}
         />
-      )}
+      ))}
 
       <circle r="12" fill={`url(#${g}-s)`} />
       {station && (
@@ -66,7 +78,7 @@ function MiniWorld({ w, size }: { w: Body; size: number }) {
       {L.marker && (
         <>
           <circle cx="2.5" cy="8.2" r="3.4" fill={`url(#${g}-g)`} opacity="0.7" />
-          <circle cx="2.5" cy="8.2" r="0.95" fill={L.lights} />
+          <circle cx="2.5" cy="8.2" r="0.95" fill={markerGlow} />
         </>
       )}
       {L.atmoStrength > 0 && (
@@ -79,16 +91,17 @@ function MiniWorld({ w, size }: { w: Body; size: number }) {
         />
       )}
 
-      {ring && (
+      {loops.map((o) => (
         <path
-          d={`M ${-12 * Math.min(ring.outer, 1.62)} 0 A ${12 * Math.min(ring.outer, 1.62)} 3.6 0 0 0 ${12 * Math.min(ring.outer, 1.62)} 0`}
+          key={`f${o.rx}`}
+          d={`M ${-o.rx} 0 A ${o.rx} ${o.ry} 0 0 0 ${o.rx} 0`}
           transform={`rotate(${tilt})`}
           fill="none"
-          stroke={ring.color}
+          stroke={o.color}
           strokeOpacity={0.85}
-          strokeWidth={1.4}
+          strokeWidth={width}
         />
-      )}
+      ))}
     </svg>
   );
 }
@@ -152,8 +165,9 @@ function Chip({
 }
 
 /**
- * Fifteen destinations as chips: a mini world and a name. Inner eight and
- * outer seven are two labelled groups. On a phone each group is a row that
+ * Every destination as a chip: a mini world and a name. The studio's own
+ * products (inner lanes, sun outward) and the client sites (outer lanes)
+ * are two labelled groups. On a phone each group is a row that
  * snap-scrolls sideways, and the chip you are flying to is scrolled into
  * view as the autopilot takes it.
  */

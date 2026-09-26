@@ -24,6 +24,8 @@ export const KIND = {
   quarry: 14,
   silver: 15,
   terracotta: 16,
+  // studio products added since
+  holler: 17,
 } as const;
 
 export type Look = {
@@ -45,7 +47,17 @@ export type Look = {
   /** axial spin, rad/s; 0 = tidally locked (anything with a fixed landmark) */
   spin: number;
   /** annulus, in multiples of the radius */
-  ring?: { inner: number; outer: number; color: string; opacity: number; ringlet?: boolean };
+  ring?: {
+    inner: number;
+    outer: number;
+    color: string;
+    opacity: number;
+    ringlet?: boolean;
+    /** the far edge fades to this colour (default: `color`) */
+    color2?: string;
+    /** a few thin concentric lines — a ripple — instead of a banded sheet */
+    ripple?: boolean;
+  };
   /** a landmark pinned just past the terminator: stadium, outpost, porch */
   marker?: { azimuth: number; size: number; glow: string };
 };
@@ -286,6 +298,27 @@ export const LOOKS: Record<string, Look> = {
     spec: 0,
     spin: 0.018,
   },
+  // —— studio products added since ——
+  // HOLLER! — a night-market world lifted off the app's own map: violet
+  // asphalt, mint rivers, gold and ember venues burning like live lines,
+  // and the pin (The Fair) shouting mint-and-violet rings across the ground.
+  // The logo's ripple becomes the planet's ring, its magenta rim the limb.
+  holler: {
+    kind: KIND.holler,
+    a: "#0b0916",
+    b: "#1a1430",
+    c: "#3a2a5c",
+    atmo: "#e85cf0",
+    atmoStrength: 0.85,
+    atmoHeight: 0.045,
+    lights: "#ffc43d",
+    lightAmount: 1.4,
+    cloud: 0,
+    spec: 0.07,
+    spin: 0,
+    ring: { inner: 1.42, outer: 2.02, color: "#5fe6f5", color2: "#8b7cff", opacity: 0.85, ripple: true },
+    marker: { azimuth: 1.35, size: 1, glow: "#ff2d6a" },
+  },
   "scenery-giant": {
     kind: KIND.giant,
     a: "#3a2616",
@@ -339,4 +372,5 @@ export const CHIP: Record<string, { short: string; tones?: [string, string, stri
   barberstucco: { short: "Barber" },
   debtangel: { short: "Debt Angel" },
   donjulio: { short: "Don Julio" },
+  holler: { short: "Holler!", tones: ["#4a3a78", "#1a1430", "#0b0916"] },
 };

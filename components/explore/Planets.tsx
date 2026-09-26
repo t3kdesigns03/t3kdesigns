@@ -6,9 +6,18 @@ import * as THREE from "three";
 import { hexToRGB } from "@/components/scene/color";
 import type { PointPool } from "@/components/scene/traffic/pointPool";
 import { flight } from "./flight";
-import { FILL_DIR, LIGHT_DIR, allBodies, worlds, type Body } from "./layout";
+import { FILL_DIR, LIGHT_DIR, allBodies, around, lanes, worlds, type Body } from "./layout";
 import { KIND } from "./looks";
-import { atmoFrag, atmoVert, planetFrag, planetVert, ringFrag, ringVert } from "./shaders";
+import {
+  atmoFrag,
+  atmoVert,
+  laneFrag,
+  laneVert,
+  planetFrag,
+  planetVert,
+  ringFrag,
+  ringVert,
+} from "./shaders";
 
 const LIGHT_COLOR = new THREE.Color("#fff0de");
 const FILL_COLOR = new THREE.Color("#6f7fd6");
@@ -136,6 +145,8 @@ function PlanetRing({ b }: { b: Body }) {
       uSeed: { value: (b.id.length * 7.3) % 11 },
       uOpacity: { value: r.opacity },
       uRinglet: { value: r.ringlet ? 1 : 0 },
+      uColor2: { value: new THREE.Color(r.color2 ?? r.color) },
+      uRipple: { value: r.ripple ? 1 : 0 },
       uNormal: { value: b.pole },
       uLightDir: { value: LIGHT_DIR },
     }),
@@ -299,6 +310,54 @@ function Dock({
   );
 }
 
+const LANE_COLOR = new THREE.Color("#cbb6ff");
+const LANE_SEGMENTS = 512;
+
+/** One world's lane round the hub, drawn as a hairline. */
+function Lane({ b, frozen }: { b: Body; frozen: boolean }) {
+  const mat = useRef<THREE.ShaderMaterial>(null);
+  const geometry = useMemo(() => {
+    const pts: THREE.Vector3[] = [];
+    for (let i = 0; i < LANE_SEGMENTS; i++) {
+      pts.push(around(LIGHT_DIR, (i / LANE_SEGMENTS) * TAU).multiplyScalar(b.lane));
+    }
+    return new THREE.BufferGeometry().setFromPoints(pts);
+  }, [b.lane]);
+  const uniforms = useMemo(
+    () => ({
+      uColor: { value: LANE_COLOR },
+      uAccent: { value: new THREE.Color(b.accent) },
+      uWorld: { value: b.center },
+      uGap: { value: b.orbitR },
+      uBase: { value: b.ring === "inner" ? 0.13 : 0.1 },
+      uHi: { value: 0 },
+      uPlaneN: { value: LIGHT_DIR },
+    }),
+    [b],
+  );
+
+  useFrame((_, dt) => {
+    if (!mat.current) return;
+    const on = (flight.mode === "orbit" && flight.body === b) || flight.target === b ? 1 : 0;
+    const u = mat.current.uniforms.uHi;
+    u.value += (on - u.value) * (1 - Math.exp(-(frozen ? 60 : 2.2) * Math.min(dt, 0.1)));
+  });
+
+  return (
+    <lineLoop geometry={geometry}>
+      <shaderMaterial
+        ref={mat}
+        uniforms={uniforms}
+        vertexShader={laneVert}
+        fragmentShader={laneFrag}
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </lineLoop>
+  );
+}
+
 export default function Planets({
   pool,
   frozen,
@@ -318,6 +377,9 @@ export default function Planets({
         .map((b) => (
           <PlanetRing key={`ring:${b.id}`} b={b} />
         ))}
+      {lanes.map((b) => (
+        <Lane key={`lane:${b.id}`} b={b} frozen={frozen} />
+      ))}
       {worlds.map((b, i) => (
         <Dock key={`dock:${b.id}`} b={b} pool={pool} frozen={frozen} index={i} />
       ))}

@@ -4,8 +4,12 @@ import { srand } from "@/components/scene/color";
 import { LOOKS, type Look } from "./looks";
 
 /**
- * The /explore map: the inner eight within ~62 units of the hub, the outer
- * seven on a ring about 104 out, two scenery bodies past that. Radii are about ten times the homepage's — here
+ * The /explore map is a system: the studio at the centre, every project on
+ * its own circular lane round it in one orbital plane — the studio's own
+ * products on the inner lanes, the client sites further out — and two
+ * scenery bodies past the last lane. The worlds hold still on their lanes;
+ * the lanes are drawn (Planets.tsx), which is what makes it read as orbits
+ * rather than a scatter. Radii are about ten times the homepage's — here
  * the planets are the subject, not the trim.
  */
 export type Body = {
@@ -27,19 +31,10 @@ export type Body = {
   quat: THREE.Quaternion;
   /** world-space unit direction of the landmark, if the world has one */
   marker: THREE.Vector3 | null;
-  /** inner eight, or the outer ring */
+  /** studio products (inner lanes) or client sites (outer lanes) */
   ring: "inner" | "outer";
-};
-
-const PLACE: Record<string, { at: [number, number, number]; r: number; dock?: number }> = {
-  t3kdesigns: { at: [0, 0, 0], r: 2.4, dock: 2.45 },
-  spydernetwork: { at: [36, 7, -26], r: 2.2 },
-  glowdaily: { at: [-32, -5, -34], r: 1.9 },
-  "stuart-softball": { at: [8, -12, -60], r: 1.5 },
-  "sob-rentals": { at: [-54, 9, 6], r: 2.0 },
-  "calming-the-chaos": { at: [50, -7, 22], r: 1.65 },
-  holotracker: { at: [-22, 13, 42], r: 1.25, dock: 2.1 },
-  porchlight: { at: [20, 11, 50], r: 1.45 },
+  /** radius of its lane round the hub; 0 for the hub and scenery */
+  lane: number;
 };
 
 /**
@@ -55,7 +50,7 @@ export const LIGHT_POS = LIGHT_DIR.clone().multiplyScalar(900);
 export const FILL_DIR = new THREE.Vector3(-0.5, -0.35, 0.8).normalize();
 
 /** a unit vector square to `n`, at angle `a` around it */
-function around(n: THREE.Vector3, a: number) {
+export function around(n: THREE.Vector3, a: number) {
   const ref = Math.abs(n.x) < 0.9 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 0, 1);
   const u = ref.addScaledVector(n, -ref.dot(n)).normalize();
   const v = new THREE.Vector3().crossVectors(n, u);
@@ -72,23 +67,49 @@ export const GALAXY_DIR = around(LIGHT_DIR, 3.7)
   .normalize();
 
 /**
- * The outer ring: seven worlds on a wide circle in the orbital plane, well
- * clear of the inner eight (which all sit within ~62 units of the hub), with
- * a little rise and fall so the ring does not read as a ruled line.
+ * The lanes, sun outward. Each world gets a circle of its own in the
+ * orbital plane (square to the key light, so every lane is lit the same).
+ * Consecutive lanes sit a golden angle apart round the hub, so neighbours
+ * on the map are never neighbours in the sky, and no two parking orbits
+ * come near each other. The gap between the two groups is deliberate:
+ * it is what separates "ours" from "theirs" at a glance.
  */
-const OUTER_R = 104;
-const OUTER_PLACE: Record<string, { a: number; lift: number; r: number }> = {
-  sts: { a: 0.35, lift: 6, r: 1.75 },
-  georgeandnicks: { a: 1.25, lift: -9, r: 1.9 },
-  kimscleaning: { a: 2.15, lift: 8, r: 1.7 },
-  appanoosegolf: { a: 3.05, lift: -4, r: 2.05 },
-  barberstucco: { a: 3.95, lift: 10, r: 1.6 },
-  debtangel: { a: 4.8, lift: -7, r: 1.8 },
-  donjulio: { a: 5.6, lift: 3, r: 1.85 },
-};
+/** seeds are the ones each world had before it moved to a lane, so its tilt and twist are unchanged */
+const HUB_PLACE = { id: "t3kdesigns", seed: 8, r: 2.4, dock: 2.45 };
+const LANES: { id: string; seed: number; r: number; dock?: number; ring: Body["ring"] }[] = [
+  // the studio's own work — tooling closest to the sun
+  { id: "porchlight", seed: 7, r: 1.45, ring: "inner" },
+  { id: "spydernetwork", seed: 1, r: 2.2, ring: "inner" },
+  { id: "glowdaily", seed: 2, r: 1.9, ring: "inner" },
+  { id: "holler", seed: 27, r: 1.9, dock: 2.4, ring: "inner" },
+  { id: "stuart-softball", seed: 3, r: 1.5, ring: "inner" },
+  { id: "sob-rentals", seed: 4, r: 2.0, ring: "inner" },
+  { id: "calming-the-chaos", seed: 5, r: 1.65, ring: "inner" },
+  { id: "holotracker", seed: 6, r: 1.25, dock: 2.1, ring: "inner" },
+  // client sites
+  { id: "sts", seed: 20, r: 1.75, ring: "outer" },
+  { id: "georgeandnicks", seed: 21, r: 1.9, ring: "outer" },
+  { id: "kimscleaning", seed: 22, r: 1.7, ring: "outer" },
+  { id: "appanoosegolf", seed: 23, r: 2.05, ring: "outer" },
+  { id: "barberstucco", seed: 24, r: 1.6, ring: "outer" },
+  { id: "debtangel", seed: 25, r: 1.8, ring: "outer" },
+  { id: "donjulio", seed: 26, r: 1.85, ring: "outer" },
+];
+const INNER_FIRST = 24;
+const INNER_STEP = 7.5;
+const OUTER_FIRST = 92;
+const OUTER_STEP = 8;
+const GOLDEN = Math.PI * (3 - Math.sqrt(5));
+/** where the first lane's world sits round the hub */
+const LANE_START = 0.6;
 
-function outerAt(a: number, lift: number): [number, number, number] {
-  const v = around(LIGHT_DIR, a).multiplyScalar(OUTER_R).addScaledVector(LIGHT_DIR, lift);
+function laneRadius(i: number) {
+  const inner = LANES.filter((l) => l.ring === "inner").length;
+  return i < inner ? INNER_FIRST + i * INNER_STEP : OUTER_FIRST + (i - inner) * OUTER_STEP;
+}
+
+function laneAt(a: number, R: number): [number, number, number] {
+  const v = around(LIGHT_DIR, a).multiplyScalar(R);
   return [v.x, v.y, v.z];
 }
 
@@ -110,7 +131,15 @@ function markerDir(azimuth: number) {
     .normalize();
 }
 
-function makeWorld(p: Project, seed: number, at: [number, number, number], r: number, dock: number | undefined, ring: Body["ring"]): Body {
+function makeWorld(
+  p: Project,
+  seed: number,
+  at: [number, number, number],
+  r: number,
+  dock: number | undefined,
+  ring: Body["ring"],
+  lane: number,
+): Body {
   const look = LOOKS[p.id];
   const dockR = r * (dock ?? 1.95);
   const { pole, quat } = orient(seed);
@@ -128,22 +157,30 @@ function makeWorld(p: Project, seed: number, at: [number, number, number], r: nu
     quat,
     marker: look.marker ? markerDir(look.marker.azimuth) : null,
     ring,
+    lane,
   };
 }
 
-const inner: Body[] = projects
-  .filter((p) => PLACE[p.id] && LOOKS[p.id])
-  .map((p, i) => makeWorld(p, i + 1, PLACE[p.id].at, PLACE[p.id].r, PLACE[p.id].dock, "inner"));
-
-const outer: Body[] = projects
-  .filter((p) => OUTER_PLACE[p.id] && LOOKS[p.id])
-  .map((p, i) => {
-    const o = OUTER_PLACE[p.id];
-    return makeWorld(p, 20 + i, outerAt(o.a, o.lift), o.r, undefined, "outer");
+function place(): Body[] {
+  const hubProject = projects.find((p) => p.id === HUB_PLACE.id);
+  const out: Body[] = [];
+  if (hubProject && LOOKS[hubProject.id]) {
+    out.push(makeWorld(hubProject, HUB_PLACE.seed, [0, 0, 0], HUB_PLACE.r, HUB_PLACE.dock, "inner", 0));
+  }
+  LANES.forEach((l, i) => {
+    const p = projects.find((q) => q.id === l.id);
+    if (!p || !LOOKS[p.id]) return;
+    const R = laneRadius(i);
+    out.push(makeWorld(p, l.seed, laneAt(LANE_START + i * GOLDEN, R), l.r, l.dock, l.ring, R));
   });
+  return out;
+}
 
-/** Fifteen destinations: the inner eight first, then the outer ring. */
-export const worlds: Body[] = [...inner, ...outer];
+/** Every destination, sun outward: the hub, then one world per lane. */
+export const worlds: Body[] = place();
+
+/** lane radii, for drawing the orbits */
+export const lanes = worlds.filter((w) => w.lane > 0);
 
 function sceneryBody(id: string, at: [number, number, number], r: number, seed: number): Body {
   const look = LOOKS[id];
@@ -162,6 +199,7 @@ function sceneryBody(id: string, at: [number, number, number], r: number, seed: 
     quat,
     marker: null,
     ring: "outer",
+    lane: 0,
   };
 }
 

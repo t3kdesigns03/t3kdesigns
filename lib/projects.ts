@@ -15,8 +15,9 @@ export type Project = {
 /**
  * Single source of truth. The 3D constellation, the mission dock and
  * /explore all render from this array. The first eight are the original
- * constellation (and /explore's inner ring); the rest fill the gaps between
- * them on the homepage and form the outer ring on /explore.
+ * constellation; the next seven fill the gaps between them on the homepage.
+ * Rows after that perch just outside the homepage ring. On /explore every
+ * row gets its own orbital lane round the studio (see explore/layout.ts).
  */
 export const projects: Project[] = [
   {
@@ -183,6 +184,19 @@ export const projects: Project[] = [
     status: "building",
     tags: ["Restaurant"],
     color: "#ff8fb1",
+  },
+  // —— studio products added since: homepage perches them just outside the
+  // ring; /explore gives them an inner lane ——
+  {
+    id: "holler",
+    name: "Holler!",
+    oneLiner: "Live lines near you.",
+    blurb:
+      "Live waits at the Iowa State Fair and the busy spots around Des Moines, ranked while you stand there. Don't walk it. Holler it. The food walks to your pin.",
+    href: "https://holler.t3kdesigns.app",
+    status: "live",
+    tags: ["Realtime", "Maps", "PWA"],
+    color: "#f25ef0",
   },
 ];
 

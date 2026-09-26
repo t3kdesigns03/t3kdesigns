@@ -125,6 +125,31 @@ export const planetFrag = /* glsl */ `
     return vec2(bowl, rim);
   }
 
+  /**
+   * Holler!'s venues: one per lit cell, gold or ember (a few mint sparks),
+   * each a crisp core in a small halo that never reaches the cell edge.
+   * The ember ones — the long lines — breathe on the app's 2.4 s beat.
+   */
+  vec3 venues(vec3 p, float freq, float keep, float size, float px) {
+    vec3 q = p * freq;
+    vec3 id = floor(q);
+    vec3 f = fract(q);
+    float h = hash31(id + uSeed * 4.3);
+    if (h > keep) return vec3(0.0);
+    vec3 c = 0.3 + 0.4 * vec3(hash31(id + 2.9), hash31(id + 6.1), hash31(id + 8.7));
+    float d = length(f - c);
+    float foot = px * freq;
+    float r = max(size, foot);
+    float energy = (size * size) / (r * r);
+    float pick = hash31(id + 7.7);
+    vec3 col = pick < 0.34 ? vec3(1.0, 0.18, 0.42) : pick < 0.42 ? vec3(0.18, 0.95, 0.77) : vec3(1.0, 0.77, 0.24);
+    float beat = pick < 0.34 ? 0.72 + 0.28 * sin(uTime * 2.618 + h * 40.0) : 1.0;
+    float core = (1.0 - smoothstep(r * 0.3, r, d)) * energy;
+    float hd = 1.0 - smoothstep(0.0, 0.3, d);
+    float halo = hd * hd * 0.3 * (0.4 + 0.6 * energy);
+    return col * (core + halo) * beat * (0.6 + 0.4 * hash31(id + 3.3));
+  }
+
   void main() {
     vec3 N = normalize(vN);
     bool inside = false;
@@ -403,6 +428,47 @@ export const planetFrag = /* glsl */ `
         glow += vec3(0.75, 0.84, 1.0) * exp(-d * d / 0.012) * 0.35;
       }
       cloud = smoothstep(0.66, 0.9, fbm3(vec3(p.x * 2.0, p.y * 5.0, p.z * 2.0) + uTime * 0.003 + 1.0)) * uCloud;
+    } else if (kind == 17) {
+      // HOLLER! — lifted off the app's map: violet asphalt, mint rivers,
+      // gold and ember venues burning like live lines, and the pin
+      float h = fbm(p * 2.2 + uSeed);
+      albedo = mix(uA, uB, smoothstep(0.34, 0.72, h));
+      albedo = mix(albedo, uC, smoothstep(0.66, 0.84, fbm3(p * 5.0 + 3.0)) * 0.4);
+      // two hairline mint rivers, like the map's: a contour of a slow noise,
+      // held to about a pixel and a half by its own screen-space gradient
+      float rn = fbm3(p * 1.4 + 8.0);
+      float rg = fwidth(rn);
+      float river = 1.0 - smoothstep(0.0012, 0.0012 + rg * 1.4, abs(rn - 0.5));
+      river *= 0.0024 / (0.0024 + rg);
+      vec3 mint = vec3(0.18, 0.95, 0.77);
+      albedo = mix(albedo, mint * 0.3, river * 0.5);
+      glow += mint * river * (0.06 + 0.4 * night);
+      // venues cluster into a few districts, with strays between
+      float district = smoothstep(0.5, 0.66, fbm3(p * 2.4 + 13.0));
+      vec3 lit = venues(p, 15.0, 0.75 * district, 0.16, px) * 2.2
+               + venues(p * 1.37 + 5.0, 42.0, 0.55 * district, 0.14, px) * 1.2
+               + venues(p + 9.0, 24.0, 0.08, 0.12, px);
+      // live, not just nightlife: the lines still read in daylight
+      glow += lit * (0.28 + 0.72 * night);
+      spec = uSpec;
+      gloss = 70.0;
+      if (uMarkerSize > 0.0) {
+        // The Fair: a white-hot pin in a magenta ring, a gold halo, and the
+        // shout — mint and violet rings rolling out across the ground
+        float d = length(N - uMarker);
+        glow += vec3(1.0, 0.96, 1.0) * (1.0 - smoothstep(0.006, 0.011 + px, d)) * 3.2;
+        glow += uAccent * (1.0 - smoothstep(0.015, 0.024 + px, d)) * smoothstep(0.006, 0.013, d) * 2.4;
+        glow += vec3(1.0, 0.77, 0.24) * exp(-d * d / 0.0035) * 0.35;
+        float w = d * 9.0 - uTime * 0.22;
+        float e = abs(fract(w) - 0.5) * 2.0;
+        // e peaks at 1 on each ring; the line is the top sliver of it,
+        // widened by the pixel footprint so it never aliases
+        float fw = fwidth(d * 9.0) * 2.0;
+        float ringLine = smoothstep(0.86 - fw, 0.985, e);
+        float fade = smoothstep(0.5, 0.06, d) * smoothstep(0.02, 0.05, d);
+        vec3 wave = mod(floor(w), 2.0) < 1.0 ? vec3(0.37, 0.9, 0.96) : vec3(0.6, 0.52, 1.0);
+        glow += wave * ringLine * fade * (0.3 + 0.7 * night) * 0.9 * (0.14 / (0.14 + fw));
+      }
     } else {
       // DON JULIO — terracotta mesas, and a night market strung with lights
       float h = fbm(p * 2.8 + uSeed);
@@ -509,6 +575,8 @@ export const ringFrag = /* glsl */ `
   uniform float uSeed;
   uniform float uOpacity;
   uniform float uRinglet;
+  uniform vec3 uColor2;
+  uniform float uRipple;
   uniform vec3 uNormal;
   uniform vec3 uLightDir;
   varying vec3 vWP;
@@ -535,6 +603,18 @@ export const ringFrag = /* glsl */ `
       float edge = smoothstep(0.0, 0.12, t) * (1.0 - smoothstep(0.82, 1.0, t)) * (0.55 + 0.45 * t);
       a = fine * mid * gap * edge;
     }
+    if (uRipple > 0.5 && t >= 0.0 && t <= 1.0) {
+      // a ripple, not a sheet: four thin lines thinning outward, like the
+      // rings round the logo's pin
+      float ft = fwidth(t);
+      a = 0.0;
+      for (int i = 0; i < 4; i++) {
+        float fi = float(i);
+        float at = 0.06 + fi * 0.29;
+        float w = 0.012 + fi * 0.002;
+        a += (1.0 - smoothstep(w, w + ft * 1.5, abs(t - at))) * (1.0 - fi * 0.18) * (w / (w + ft));
+      }
+    }
     if (uRinglet > 0.5) {
       float rt = (r - (uOuter + span * 0.28)) / (span * 0.05);
       a = max(a, (1.0 - smoothstep(0.6, 1.0, abs(rt))) * 0.8);
@@ -548,8 +628,50 @@ export const ringFrag = /* glsl */ `
     float c = dot(o, o) - uRadius * uRadius;
     float shadow = (b < 0.0 && b * b - c > 0.0) ? 0.85 : 0.0;
     float lit = 0.3 + 0.7 * abs(dot(uNormal, uLightDir));
-    vec3 col = uColor * lit * (1.0 - shadow);
+    vec3 col = mix(uColor, uColor2, clamp(t, 0.0, 1.0)) * lit * (1.0 - shadow);
     gl_FragColor = vec4(col, a);
+    #include <colorspace_fragment>
+  }
+`;
+
+/**
+ * Orbit lanes: a hairline circle per world round the hub. Faint by default,
+ * brighter close to its own world and in that world's accent when it is
+ * where you are parked or heading. It breaks round the world itself, and
+ * fades out near the camera so a lane running under a parked shot never
+ * slices across the frame.
+ */
+export const laneVert = /* glsl */ `
+  varying vec3 vWP;
+  void main() {
+    vec4 wp = modelMatrix * vec4(position, 1.0);
+    vWP = wp.xyz;
+    gl_Position = projectionMatrix * viewMatrix * wp;
+  }
+`;
+
+export const laneFrag = /* glsl */ `
+  uniform vec3 uColor;
+  uniform vec3 uAccent;
+  uniform vec3 uWorld;
+  uniform float uGap;
+  uniform float uBase;
+  uniform float uHi;
+  uniform vec3 uPlaneN;
+  varying vec3 vWP;
+  void main() {
+    float dc = distance(cameraPosition, vWP);
+    // far lanes seen edge-on pile into one bright band on the horizon;
+    // thin them as the view grazes the plane
+    float graze = smoothstep(0.02, 0.13, abs(dot((vWP - cameraPosition) / dc, uPlaneN)));
+    float near = smoothstep(3.0, 18.0, dc);
+    float far = 1.0 - 0.55 * smoothstep(120.0, 360.0, dc);
+    float dw = distance(vWP, uWorld);
+    float gap = smoothstep(uGap * 1.05, uGap * 1.7, dw);
+    float halo = 1.0 + 1.4 * exp(-pow(dw / (uGap * 5.0), 2.0));
+    float a = uBase * near * far * gap * halo * (0.1 + 0.9 * graze) * (1.0 + uHi * 1.6);
+    vec3 col = mix(uColor, uAccent, 0.3 + 0.55 * uHi) * a;
+    gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
   }
 `;

@@ -128,7 +128,7 @@ export default function HUD({
         </AnimatePresence>
       </div>
 
-      {/* hint + the Director chips: inner eight above, outer ring below */}
+      {/* hint + the Director chips: studio products above, client sites below */}
       <div className="absolute inset-x-0 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] flex flex-col items-center gap-2.5 px-3 sm:bottom-[calc(1rem+env(safe-area-inset-bottom))]">
         <p
           aria-hidden={touched}

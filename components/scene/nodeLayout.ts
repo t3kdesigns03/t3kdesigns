@@ -29,13 +29,25 @@ const STEP = TAU / FIRST;
  * stays empty so nothing parks in front of the hero.
  */
 const GAPS = [0, 2, 3, 4, 5, 6, 7];
+/**
+ * The ring is full after fifteen. Anything later perches just outside it,
+ * a little high, on the far side from the desktop camera — scored against
+ * both camera poses so it lands on screen on a phone too, clear of every
+ * other node. Keyed by id so reordering the array cannot move them.
+ */
+const PERCH: Record<string, { a: number; ring: number; y: number; scale: number }> = {
+  holler: { a: 4.15, ring: 12, y: 1.4, scale: 0.5 },
+};
 
 export const nodeSpots: NodeSpot[] = projects.map((p, i) => {
   let a: number;
   let ring: number;
   let y: number;
   let scale: number;
-  if (i < FIRST) {
+  const perch = PERCH[p.id];
+  if (perch) {
+    ({ a, ring, y, scale } = perch);
+  } else if (i < FIRST) {
     a = i * STEP + 0.42;
     ring = 7.5 + srand(i * 3.1) * 1.5;
     // lift them off the disk plane so the ring reads as a shell, not a belt
