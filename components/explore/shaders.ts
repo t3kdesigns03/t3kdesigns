@@ -677,45 +677,115 @@ export const laneFrag = /* glsl */ `
 `;
 
 /**
- * Hull: faceted, key + fill, and a cool rim so the silhouette reads against
- * a dark world or the void. The rim is what stops it being a brown crumb.
+ * Steel stack: brushed stainless under the key light, a cool rim so the
+ * silhouette holds against a dark world, and a fake sky in the reflection so
+ * the barrel reads as metal rather than grey plastic.
+ *
+ * uMode 0: plain metal (nozzle bells; uHeat lights the inside while burning)
+ * uMode 1: the stack — ring seams, belly tile strip, visor band, dark aft bay
+ * uMode 2: a flap plate — tiled on its -Y face, steel on the other
  */
-export const hullVert = /* glsl */ `
-  attribute vec3 aSmooth;
+export const steelVert = /* glsl */ `
   varying vec3 vN;
-  varying vec3 vS;
+  varying vec3 vLN;
+  varying vec3 vLP;
   varying vec3 vWP;
   void main() {
+    vLN = normal;
+    vLP = position;
     vN = normalize(mat3(modelMatrix) * normal);
-    vS = normalize(mat3(modelMatrix) * aSmooth);
     vec4 wp = modelMatrix * vec4(position, 1.0);
     vWP = wp.xyz;
     gl_Position = projectionMatrix * viewMatrix * wp;
   }
 `;
 
-export const hullFrag = /* glsl */ `
+export const steelFrag = /* glsl */ `
   uniform vec3 uLightDir;
   uniform vec3 uFillDir;
   uniform vec3 uBase;
+  uniform vec3 uTile;
   uniform vec3 uRim;
+  uniform vec3 uBand;
+  uniform vec3 uHeatCol;
+  uniform float uMode;
+  uniform float uHeat;
   varying vec3 vN;
-  varying vec3 vS;
+  varying vec3 vLN;
+  varying vec3 vLP;
   varying vec3 vWP;
 
+  float hash(float n) { return fract(sin(n) * 43758.5453); }
+
   void main() {
-    // facets for the body, a smoothed normal for the sheen and the rim:
-    // flat panels, but edges that catch the light like a real hull
-    vec3 N = normalize(vN);
-    vec3 S = normalize(vS);
+    float face = gl_FrontFacing ? 1.0 : -1.0;
+    vec3 N = normalize(vN) * face;
+    vec3 LN = normalize(vLN) * face;
     vec3 V = normalize(cameraPosition - vWP);
+
+    vec3 albedo = uBase;
+    float gloss = 1.0;
+    float band = 0.0;
+
+    if (uMode > 0.5 && uMode < 1.5) {
+      float z = vLP.z;
+      float r = length(vLP.xy);
+      float ang = atan(vLP.y, vLP.x);
+      vec2 dir = LN.xy / max(length(LN.xy), 1e-4);
+
+      // brushed: faint streaks running along the barrel
+      albedo *= 0.94 + 0.09 * hash(floor((ang + 3.1416) * 34.0));
+
+      // ring seams on the barrel, antialiased so they do not crawl
+      float q = z / 0.066;
+      float d = abs(fract(q + 0.5) - 0.5);
+      float seam = 1.0 - smoothstep(0.0, max(fwidth(q) * 1.2, 0.035), d);
+      albedo *= 1.0 - 0.14 * seam * step(-0.49, z) * step(z, 0.3);
+
+      // belly tiles: the -Y half, up to just over the waterline, ragged at the edge
+      float row = floor(z / 0.018);
+      float edge = -0.12 + 0.07 * (hash(row * 1.7) - 0.5);
+      float tile = step(edge, -dir.y) * step(-0.6, z) * step(z, 0.55);
+      float cell = hash(row * 13.1 + floor((ang + 3.1416) * 40.0));
+      albedo = mix(albedo, uTile * (0.85 + 0.3 * cell), tile);
+      gloss = mix(gloss, 0.22, tile);
+
+      // visor band on the nose, over the top only
+      float bw = max(fwidth(z), 0.0015);
+      band = smoothstep(0.393 - bw, 0.393 + bw, z) * (1.0 - smoothstep(0.405 - bw, 0.405 + bw, z));
+      band *= smoothstep(-0.45, -0.25, dir.y);
+
+      // aft bulkhead and the inside of the skirt: an engine bay, dark
+      float bay = step(z, -0.572) * step(r, 0.1235);
+      albedo = mix(albedo, vec3(0.035, 0.035, 0.045), bay);
+      gloss = mix(gloss, 0.3, bay);
+    } else if (uMode > 1.5) {
+      float tile = step(LN.y, -0.5);
+      albedo = mix(albedo, uTile, tile);
+      gloss = mix(gloss, 0.22, tile);
+    }
+
     float key = max(dot(N, uLightDir), 0.0);
     float fill = max(dot(N, uFillDir), 0.0);
-    vec3 col = uBase * (0.4 + key * 0.9 + fill * 0.6);
+    vec3 col = albedo * (0.07 + key * 0.95 + fill * 0.28);
+
+    // brushed, not chrome: a broad soft lobe and a small tight one
     vec3 H = normalize(uLightDir + V);
-    col += vec3(0.85, 0.87, 1.0) * pow(max(dot(S, H), 0.0), 60.0) * 0.35;
-    float rim = pow(1.0 - abs(dot(S, V)), 4.0);
-    col += uRim * rim * 0.9;
+    float nh = max(dot(N, H), 0.0);
+    col += vec3(0.95, 0.95, 1.0) * (pow(nh, 18.0) * 0.22 + pow(nh, 180.0) * 0.5) * gloss;
+
+    // a fake sky in the reflection: lilac-grey toward the key, near black away
+    vec3 Rf = reflect(-V, N);
+    float sky = 0.5 + 0.5 * dot(Rf, uLightDir);
+    col += mix(vec3(0.015, 0.014, 0.024), vec3(0.26, 0.25, 0.34), sky * sky * sky) * 0.25 * gloss;
+
+    float rim = pow(1.0 - abs(dot(N, V)), 3.5);
+    col += uRim * rim * 0.6;
+
+    // inside a bell while the drive is lit
+    col += uHeatCol * uHeat * (1.0 - face) * 0.5;
+
+    col = mix(col, uBand, band);
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
   }
