@@ -682,17 +682,19 @@ export const laneFrag = /* glsl */ `
  * the barrel reads as metal rather than grey plastic.
  *
  * uMode 0: plain metal (nozzle bells; uHeat lights the inside while burning)
- * uMode 1: the stack — ring seams, belly tile strip, visor band, dark aft bay
- * uMode 2: a flap plate — tiled on its -Y face, steel on the other
+ * uMode 1: the stack — weld rings, oil-canning, tiled belly, visor band, aft bay
+ * uMode 2: a flap plate — tiled on its -Y face, steel on top
  */
 export const steelVert = /* glsl */ `
   varying vec3 vN;
   varying vec3 vLN;
   varying vec3 vLP;
   varying vec3 vWP;
+  varying vec3 vAxis;
   void main() {
     vLN = normal;
     vLP = position;
+    vAxis = normalize(mat3(modelMatrix) * vec3(0.0, 0.0, 1.0));
     vN = normalize(mat3(modelMatrix) * normal);
     vec4 wp = modelMatrix * vec4(position, 1.0);
     vWP = wp.xyz;
@@ -710,12 +712,30 @@ export const steelFrag = /* glsl */ `
   uniform vec3 uHeatCol;
   uniform float uMode;
   uniform float uHeat;
+  uniform float uGloss;
   varying vec3 vN;
   varying vec3 vLN;
   varying vec3 vLP;
   varying vec3 vWP;
+  varying vec3 vAxis;
 
   float hash(float n) { return fract(sin(n) * 43758.5453); }
+
+  // Square heat tiles in staggered rows, cell size c. Returns the cell
+  // (x, row) and, in zw, grout (0..1) and a per-tile shade; both fade out
+  // once a tile is only a pixel or two across, so the grid never shimmers.
+  vec4 tileGrid(vec2 p, float c) {
+    vec2 g = p / c;
+    float row = floor(g.y);
+    g.x += 0.5 * mod(row, 2.0);
+    vec2 cell = floor(g);
+    vec2 f = fract(g);
+    float e = min(min(f.x, 1.0 - f.x), min(f.y, 1.0 - f.y));
+    float fw = length(fwidth(g));
+    float grout = (1.0 - smoothstep(0.0, fw + 0.07, e)) * (1.0 - smoothstep(0.3, 0.6, fw));
+    float shade = (hash(cell.x * 7.13 + row * 31.7) - 0.5) * (1.0 - smoothstep(0.45, 0.9, fw));
+    return vec4(cell.x - 0.5 * mod(row, 2.0), row, grout, shade);
+  }
 
   void main() {
     float face = gl_FrontFacing ? 1.0 : -1.0;
@@ -724,7 +744,7 @@ export const steelFrag = /* glsl */ `
     vec3 V = normalize(cameraPosition - vWP);
 
     vec3 albedo = uBase;
-    float gloss = 1.0;
+    float gloss = uGloss;
     float band = 0.0;
 
     if (uMode > 0.5 && uMode < 1.5) {
@@ -742,13 +762,30 @@ export const steelFrag = /* glsl */ `
       float seam = 1.0 - smoothstep(0.0, max(fwidth(q) * 1.2, 0.035), d);
       albedo *= 1.0 - 0.14 * seam * step(-0.49, z) * step(z, 0.3);
 
-      // belly tiles: the -Y half, up to just over the waterline, ragged at the edge
-      float row = floor(z / 0.018);
-      float edge = -0.12 + 0.07 * (hash(row * 1.7) - 0.5);
-      float tile = step(edge, -dir.y) * step(-0.6, z) * step(z, 0.55);
-      float cell = hash(row * 13.1 + floor((ang + 3.1416) * 40.0));
-      albedo = mix(albedo, uTile * (0.85 + 0.3 * cell), tile);
-      gloss = mix(gloss, 0.22, tile);
+      // belly tiles. Angle is measured from the keel so the atan seam sits
+      // on top, far from any tile. Each tile is in or out whole, so the
+      // terminator is a ragged staircase. Smaller tiles at the flap roots
+      // and under the nose, where the heat is.
+      float keel = atan(vLP.x, -vLP.y);
+      float elev = atan(dir.y, abs(dir.x));
+      float dense = max(step(0.27, z), step(-0.52, z) * step(z, -0.18) * step(abs(elev + 0.7), 0.3));
+      dense = max(dense, step(0.17, z) * step(z, 0.39) * step(abs(elev - 0.26), 0.25));
+      float c = mix(0.034, 0.019, dense);
+      vec4 tg = tileGrid(vec2(keel * 0.115, z), c);
+      float cKeel = (tg.x + 0.5) * c / 0.115;
+      float edge = -0.3 + 0.16 * (hash(tg.x * 3.7 + tg.y * 11.3) - 0.5);
+      float tile = step(edge, cos(cKeel)) * step(-0.6, z) * step(z, 0.66);
+      vec3 tileCol = uTile * (1.0 + 0.45 * tg.w);
+      tileCol = mix(tileCol, uTile * 0.3, tg.z);
+      albedo = mix(albedo, tileCol, tile);
+      gloss = mix(gloss, 0.2, tile);
+
+      // oil-canning: faint waves in the steel between the weld rings
+      vec3 across = cross(normalize(vAxis), N);
+      across /= max(length(across), 1e-3);
+      float w1 = sin(keel * 11.0 + 1.7 * sin(z * 29.0));
+      float w2 = sin(z * 95.2 + keel * 5.0);
+      N = normalize(N + (across * w1 * 0.035 + normalize(vAxis) * w2 * 0.02) * (1.0 - tile) * step(-0.49, z) * step(z, 0.3));
 
       // visor band on the nose, over the top only
       float bw = max(fwidth(z), 0.0015);
@@ -761,7 +798,9 @@ export const steelFrag = /* glsl */ `
       gloss = mix(gloss, 0.3, bay);
     } else if (uMode > 1.5) {
       float tile = step(LN.y, -0.5);
-      albedo = mix(albedo, uTile, tile);
+      vec4 tg = tileGrid(vLP.xz, 0.019);
+      vec3 tileCol = mix(uTile * (1.0 + 0.45 * tg.w), uTile * 0.3, tg.z);
+      albedo = mix(albedo, tileCol, tile);
       gloss = mix(gloss, 0.22, tile);
     }
 

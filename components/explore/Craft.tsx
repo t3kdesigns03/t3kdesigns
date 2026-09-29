@@ -14,7 +14,7 @@ const ION = new THREE.Color("#8fc8ff");
 
 /**
  * Hull space: +Z is the nose, +Y is up (away from the belly tiles). The
- * stack is about 1.3 long and 0.25 across; SCALE sets its size on screen.
+ * stack is about 1.32 long and 0.25 across; SCALE sets its size on screen.
  * If it ever reads as a tower next to a world, shrink SCALE — nothing else.
  */
 const SCALE = 0.74;
@@ -24,40 +24,66 @@ const SKIRT_R = 0.1245;
 const BULKHEAD_Z = -0.575;
 const SKIRT_Z = -0.622;
 const NOSE_BASE = 0.3;
-const TIP = 0.66;
+const TIP = 0.7;
 
 /** Six bells: three small inner, three larger outer, clear of the skirt. */
 type Bell = { x: number; y: number; exit: number; len: number };
 const deg = THREE.MathUtils.degToRad;
 const BELLS: Bell[] = [
-  ...[90, 210, 330].map((a) => ({ x: 0.036 * Math.cos(deg(a)), y: 0.036 * Math.sin(deg(a)), exit: 0.021, len: 0.045 })),
-  ...[30, 150, 270].map((a) => ({ x: 0.078 * Math.cos(deg(a)), y: 0.078 * Math.sin(deg(a)), exit: 0.033, len: 0.068 })),
+  ...[90, 210, 330].map((a) => ({ x: 0.036 * Math.cos(deg(a)), y: 0.036 * Math.sin(deg(a)), exit: 0.021, len: 0.055 })),
+  ...[30, 150, 270].map((a) => ({ x: 0.078 * Math.cos(deg(a)), y: 0.078 * Math.sin(deg(a)), exit: 0.033, len: 0.088 })),
 ];
-const CLUSTER_Z = BULKHEAD_Z - 0.07;
+const CLUSTER_Z = BULKHEAD_Z - 0.09;
 
 /**
  * Four aft flaps in an X, hinged on the barrel and folded in toward the
- * vertical, so from the side (the parked shot) two rise above the stack and
- * two hang below it. The left pair is the right pair mirrored.
+ * vertical, so from the side two rise above the stack and two hang below.
+ * Two small forward flaps sit at the nose on the tile line, drooped a touch.
+ * Plates are tiled on the windward face. The left side is the right mirrored.
  */
 const HINGE = deg(40);
 const FOLD = deg(62);
-const FLAP_SPAN = 0.115;
-const FLAP_TIP_Z = -0.42;
-type Flap = { side: 1 | -1; lower: boolean };
+const FORE_DROOP = deg(12);
+/** fore flaps hinge on the tile line, a little above the waterline */
+const FORE_HINGE = deg(15);
+type FlapShape = { root0: number; root1: number; tip0: number; tip1: number; span: number };
+const AFT: FlapShape = { root0: -0.5, root1: -0.22, tip0: -0.47, tip1: -0.37, span: 0.115 };
+const FORE: FlapShape = { root0: 0.19, root1: 0.37, tip0: 0.21, tip1: 0.29, span: 0.07 };
+type Flap = { side: 1 | -1; kind: "up" | "low" | "fore" };
 const FLAPS: Flap[] = [
-  { side: 1, lower: false },
-  { side: 1, lower: true },
-  { side: -1, lower: false },
-  { side: -1, lower: true },
+  { side: 1, kind: "up" },
+  { side: 1, kind: "low" },
+  { side: -1, kind: "up" },
+  { side: -1, kind: "low" },
+  { side: 1, kind: "fore" },
+  { side: -1, kind: "fore" },
 ];
-/** flap tips (hull space), where the nav pins sit: upper pair */
-const TIP_L = new THREE.Vector3(
-  -(R * Math.cos(HINGE) + FLAP_SPAN * Math.cos(FOLD)),
-  R * Math.sin(HINGE) + FLAP_SPAN * Math.sin(FOLD),
-  FLAP_TIP_Z,
+const flapPos = (k: Flap["kind"]): [number, number, number] =>
+  k === "fore" ? [R * Math.cos(FORE_HINGE) - 0.003, R * Math.sin(FORE_HINGE), 0] : [R * Math.cos(HINGE) - 0.002, (k === "low" ? -1 : 1) * R * Math.sin(HINGE), 0];
+const flapRest = (k: Flap["kind"]) => (k === "fore" ? -FORE_DROOP : k === "low" ? -FOLD : FOLD);
+/** upper aft flap tips (hull space), where the nav pins sit */
+const TIP_R = new THREE.Vector3(
+  R * Math.cos(HINGE) + AFT.span * Math.cos(FOLD),
+  R * Math.sin(HINGE) + AFT.span * Math.sin(FOLD),
+  (AFT.tip0 + AFT.tip1) / 2,
 );
-const TIP_R = TIP_L.clone().setX(-TIP_L.x);
+const TIP_L = TIP_R.clone().setX(-TIP_R.x);
+
+/**
+ * Cable raceway down the upper -X shoulder (the side the parked camera
+ * sees), skirt to nose: a straight run on the barrel, then a short run
+ * leaning in with the ogive.
+ */
+const RACEWAY_ANG = deg(130);
+const RACEWAY_Z0 = -0.49;
+const RACEWAY_Z1 = NOSE_BASE;
+const RACEWAY_NOSE = 0.17;
+/** Two catch pegs mid-body, on the shoulder opposite the raceway. */
+const PEG_ANG = deg(50);
+const PEG_Z = [0.04, -0.08];
+/** Two header-tank blisters under the nose, either side of the keel. */
+const BLISTER_ANG = [deg(-90 + 28), deg(-90 - 28)];
+const BLISTER_Z = 0.43;
 
 /** One lathe: aft bay, skirt, flare, barrel, tangent-ogive nose. */
 function stackGeometry() {
@@ -93,18 +119,19 @@ function stackGeometry() {
   return g;
 }
 
-/** A trapezoid plate: root on the hinge line, swept leading edge, round tip. */
-function flapGeometry() {
+/** A flap plate: root on the hinge line, swept leading edge, round tip. */
+function flapGeometry(f: FlapShape) {
   const s = new THREE.Shape();
-  s.moveTo(0, -0.5);
-  s.lineTo(0, -0.22);
-  s.lineTo(FLAP_SPAN * 0.85, -0.35);
-  s.quadraticCurveTo(FLAP_SPAN, -0.37, FLAP_SPAN, -0.4);
-  s.lineTo(FLAP_SPAN, -0.47);
-  s.lineTo(0, -0.5);
-  const g = new THREE.ExtrudeGeometry(s, { depth: 0.01, bevelEnabled: false, curveSegments: 4 });
+  const r = f.tip1 + (f.tip1 - f.tip0) * 0.35;
+  s.moveTo(0, f.root0);
+  s.lineTo(0, f.root1);
+  s.lineTo(f.span * 0.8, r);
+  s.quadraticCurveTo(f.span, f.tip1, f.span, f.tip1 - (f.tip1 - f.tip0) * 0.3);
+  s.lineTo(f.span, f.tip0);
+  s.lineTo(0, f.root0);
+  const g = new THREE.ExtrudeGeometry(s, { depth: 0.009, bevelEnabled: false, curveSegments: 4 });
   g.rotateX(Math.PI / 2); // shape y → hull z; thickness along -y
-  g.translate(0, 0.005, 0);
+  g.translate(0, 0.0045, 0);
   return g;
 }
 
@@ -116,18 +143,19 @@ function bellGeometry(exit: number, len: number) {
   return g;
 }
 
-function steel(mode: number, base: string) {
+function steel(mode: number, base: string, gloss = 1) {
   return new THREE.ShaderMaterial({
     uniforms: {
       uLightDir: { value: LIGHT_DIR },
       uFillDir: { value: FILL_DIR },
       uBase: { value: new THREE.Color(base) },
-      uTile: { value: new THREE.Color("#18181e") },
+      uTile: { value: new THREE.Color("#2a2b30") },
       uRim: { value: new THREE.Color("#a9b8ff") },
       uBand: { value: new THREE.Color("#c9bcff") },
       uHeatCol: { value: ION },
       uMode: { value: mode },
       uHeat: { value: 0 },
+      uGloss: { value: gloss },
     },
     vertexShader: steelVert,
     fragmentShader: steelFrag,
@@ -151,14 +179,21 @@ export default function Craft({
 
   const parts = useMemo(() => {
     const stack = stackGeometry();
-    const flap = flapGeometry();
-    const bellSmall = bellGeometry(0.021, 0.045);
-    const bellBig = bellGeometry(0.033, 0.068);
+    const flapAft = flapGeometry(AFT);
+    const flapFore = flapGeometry(FORE);
+    const raceway = new THREE.BoxGeometry(0.024, 0.013, RACEWAY_Z1 - RACEWAY_Z0);
+    const racewayNose = new THREE.BoxGeometry(0.02, 0.011, RACEWAY_NOSE);
+    const peg = new THREE.CylinderGeometry(0.0065, 0.0065, 0.026, 10);
+    const blister = new THREE.SphereGeometry(1, 16, 10);
+    const bellSmall = bellGeometry(0.021, 0.055);
+    const bellBig = bellGeometry(0.033, 0.088);
     const cone = new THREE.ConeGeometry(0.055, 1, 14, 1, true);
     const hullMat = steel(1, "#737780");
     const plateSteel = steel(0, "#737780");
+    const rackMat = steel(0, "#2f3137", 0.25);
+    const tileMat = steel(0, "#2a2b30");
     const plateTile = steel(2, "#737780");
-    const bellMat = steel(0, "#2c2d34");
+    const bellMat = steel(0, "#3c3e46");
     const plumeMat = new THREE.ShaderMaterial({
       uniforms: { uColor: { value: ION }, uPower: { value: 0 } },
       vertexShader: spikeVert,
@@ -168,7 +203,25 @@ export default function Craft({
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
     });
-    return { stack, flap, bellSmall, bellBig, cone, hullMat, plateSteel, plateTile, bellMat, plumeMat };
+    return {
+      stack,
+      flapAft,
+      flapFore,
+      raceway,
+      racewayNose,
+      peg,
+      blister,
+      bellSmall,
+      bellBig,
+      cone,
+      hullMat,
+      plateSteel,
+      rackMat,
+      tileMat,
+      plateTile,
+      bellMat,
+      plumeMat,
+    };
   }, []);
 
   useEffect(
@@ -187,11 +240,12 @@ export default function Craft({
     g.position.copy(flight.pos);
     g.quaternion.copy(flight.quat);
 
-    // flaps trim a few degrees into the bank
+    // flaps trim a few degrees into the bank; the forward pair works against
+    // the aft pair, and the mirror makes left and right opposite
     const trim = THREE.MathUtils.clamp(flight.bank, -0.7, 0.7) * 0.12;
     FLAPS.forEach((f, i) => {
       const fg = flaps.current[i];
-      if (fg) fg.rotation.z = (f.lower ? -FOLD : FOLD) + trim;
+      if (fg) fg.rotation.z = flapRest(f.kind) + (f.kind === "fore" ? -trim : trim);
     });
 
     // plume: only while inbound, never parked in orbit
@@ -214,7 +268,7 @@ export default function Craft({
     parts.plumeMat.uniforms.uPower.value = 0.4 + 0.9 * th;
     parts.bellMat.uniforms.uHeat.value = th;
 
-    // two pin nav lights on the upper flap tips, and a glow at the cluster under thrust
+    // two pin nav lights on the upper aft flap tips, and a glow at the cluster under thrust
     const blink = reduced ? 0.8 : 0.55 + 0.45 * Math.pow(Math.max(0, Math.sin(t * 2.6)), 12);
     let p = at(TIP_L);
     pool.set(navBase, p.x, p.y, p.z, WARM[0], WARM[1], WARM[2], 0.55, blink * 0.9);
@@ -238,11 +292,34 @@ export default function Craft({
               ref={(el) => {
                 flaps.current[i] = el;
               }}
-              position={[R * Math.cos(HINGE) - 0.002, (f.lower ? -1 : 1) * R * Math.sin(HINGE), 0]}
-              rotation={[0, 0, f.lower ? -FOLD : FOLD]}
+              position={flapPos(f.kind)}
+              rotation={[0, 0, flapRest(f.kind)]}
             >
-              <mesh geometry={parts.flap} material={f.lower ? parts.plateTile : parts.plateSteel} />
+              <mesh
+                geometry={f.kind === "fore" ? parts.flapFore : parts.flapAft}
+                material={f.kind === "up" ? parts.plateSteel : parts.plateTile}
+              />
             </group>
+          </group>
+        ))}
+        {/* raceway: barrel run, then a short run leaning in along the nose */}
+        <group rotation={[0, 0, RACEWAY_ANG - Math.PI / 2]}>
+          <mesh geometry={parts.raceway} material={parts.rackMat} position={[0, R + 0.005, (RACEWAY_Z0 + RACEWAY_Z1) / 2]} />
+          <mesh
+            geometry={parts.racewayNose}
+            material={parts.rackMat}
+            position={[0, 0.114, NOSE_BASE + RACEWAY_NOSE / 2 - 0.004]}
+            rotation={[0.114, 0, 0]}
+          />
+        </group>
+        {PEG_Z.map((z) => (
+          <group key={z} rotation={[0, 0, PEG_ANG - Math.PI / 2]}>
+            <mesh geometry={parts.peg} material={parts.bellMat} position={[0, R + 0.01, z]} />
+          </group>
+        ))}
+        {BLISTER_ANG.map((a) => (
+          <group key={a} rotation={[0, 0, a - Math.PI / 2]}>
+            <mesh geometry={parts.blister} material={parts.tileMat} position={[0, 0.098, BLISTER_Z]} scale={[0.017, 0.012, 0.05]} />
           </group>
         ))}
         {BELLS.map((b, i) => (
