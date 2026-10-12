@@ -37,6 +37,8 @@ const GAPS = [0, 2, 3, 4, 5, 6, 7];
  */
 const PERCH: Record<string, { a: number; ring: number; y: number; scale: number }> = {
   holler: { a: 4.15, ring: 12, y: 1.4, scale: 0.5 },
+  // across the far side from Holler!, low where Holler! is high
+  chancesr: { a: 5.3, ring: 11.4, y: -1.25, scale: 0.42 },
 };
 
 export const nodeSpots: NodeSpot[] = projects.map((p, i) => {

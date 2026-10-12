@@ -298,6 +298,24 @@ export const LOOKS: Record<string, Look> = {
     spec: 0,
     spin: 0.018,
   },
+  // Chances "R": oxblood supper-club ground under brass lights, a thin brass ring off the
+  // crest, and the red sign glowing just past the terminator
+  chancesr: {
+    kind: KIND.ember,
+    a: "#120a07",
+    b: "#4a1418",
+    c: "#8a2a2c",
+    atmo: "#e8bb63",
+    atmoStrength: 0.6,
+    atmoHeight: 0.04,
+    lights: "#ffc56a",
+    lightAmount: 1.5,
+    cloud: 0,
+    spec: 0.05,
+    spin: 0,
+    ring: { inner: 1.5, outer: 1.62, color: "#e8bb63", opacity: 0.6, ringlet: true },
+    marker: { azimuth: 2.2, size: 1, glow: "#d0384e" },
+  },
   // —— studio products added since ——
   // HOLLER! — a night-market world lifted off the app's own map: violet
   // asphalt, mint rivers, gold and ember venues burning like live lines,
@@ -373,4 +391,5 @@ export const CHIP: Record<string, { short: string; tones?: [string, string, stri
   debtangel: { short: "Debt Angel" },
   donjulio: { short: "Don Julio" },
   holler: { short: "Holler!", tones: ["#4a3a78", "#1a1430", "#0b0916"] },
+  chancesr: { short: "Chances R", tones: ["#a51c30", "#4a1418", "#120a07"] },
 };

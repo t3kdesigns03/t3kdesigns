@@ -5,7 +5,7 @@ import Crew from "./Crew";
 import Satellites from "./Satellites";
 import Ships, { buildShips } from "./Ships";
 import TrafficPoints from "./TrafficPoints";
-import Worlds from "./Worlds";
+import Worlds from "./WorldBodies";
 import { PointPool } from "./pointPool";
 import { layout } from "./anchors";
 import type { TierConfig } from "../perf";

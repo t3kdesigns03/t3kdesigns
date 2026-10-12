@@ -198,6 +198,17 @@ export const projects: Project[] = [
     tags: ["Realtime", "Maps", "PWA"],
     color: "#f25ef0",
   },
+  {
+    id: "chancesr",
+    name: "Chances “R”",
+    oneLiner: "York, Nebraska’s supper club since 1932",
+    blurb:
+      "A preview for a downtown York institution: a painted prime-rib hero, a build-your-plate centerpiece you can cut with a butter knife, the whole printed menu on screen, and ninety years from the Cozy Lunch to Chances “R”.",
+    href: "https://chancesr.t3kdesigns.app",
+    status: "live",
+    tags: ["Restaurant", "Menu"],
+    color: "#e8bb63",
+  },
 ];
 
 export const statusLabel: Record<ProjectStatus, string> = {

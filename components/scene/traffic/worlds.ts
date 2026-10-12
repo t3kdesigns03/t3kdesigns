@@ -222,6 +222,20 @@ Object.assign(WORLDS, {
 } satisfies Record<string, WorldDef>);
 
 /**
+ * Chances "R": a supper-club world. Oxblood ground, brass city lights, the crest's thin brass ring,
+ * and one red light on the night side for the sign out front.
+ */
+Object.assign(WORLDS, {
+  chancesr: {
+    id: "chancesr", base: "#120a07", base2: "#5a1a1c", atmo: "#e8bb63", radius: 0.16,
+    feature: 3.0, city: 1.0, cloud: 0, spec: 0.05, atmoStrength: 0.2, bands: 0,
+    spin: 0.035, tilt: 0.28,
+    ring: { inner: 0.235, outer: 0.262, color: "#e8bb63", opacity: 0.6 },
+    beacon: { color: "#d0384e", size: 1.9 },
+  },
+} satisfies Record<string, WorldDef>);
+
+/**
  * Somewhere to fly that is not work. Scenery only — never in the dock,
  * never clickable, but far enough out that a run there reads as a journey.
  */

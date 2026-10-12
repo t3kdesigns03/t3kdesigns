@@ -94,6 +94,7 @@ const LANES: { id: string; seed: number; r: number; dock?: number; ring: Body["r
   { id: "barberstucco", seed: 24, r: 1.6, ring: "outer" },
   { id: "debtangel", seed: 25, r: 1.8, ring: "outer" },
   { id: "donjulio", seed: 26, r: 1.85, ring: "outer" },
+  { id: "chancesr", seed: 28, r: 1.85, ring: "outer" },
 ];
 const INNER_FIRST = 24;
 const INNER_STEP = 7.5;
