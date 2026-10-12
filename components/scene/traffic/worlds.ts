@@ -236,6 +236,20 @@ Object.assign(WORLDS, {
 } satisfies Record<string, WorldDef>);
 
 /**
+ * Iowa River Dentistry: a calm water world. Deep navy under soft teal bands, an aqua ring
+ * for the river through the tooth, and one warm-white light on the night side.
+ */
+Object.assign(WORLDS, {
+  iowariverdentistry: {
+    id: "iowariverdentistry", base: "#0a2236", base2: "#2a9d97", atmo: "#7fd3cb", radius: 0.15,
+    feature: 2.2, city: 0.3, cloud: 0.12, spec: 0.3, atmoStrength: 0.24, bands: 1,
+    spin: 0.03, tilt: 0.32,
+    ring: { inner: 0.215, outer: 0.245, color: "#9be0d8", opacity: 0.6 },
+    beacon: { color: "#fbf8f3", size: 1.7 },
+  },
+} satisfies Record<string, WorldDef>);
+
+/**
  * Somewhere to fly that is not work. Scenery only — never in the dock,
  * never clickable, but far enough out that a run there reads as a journey.
  */

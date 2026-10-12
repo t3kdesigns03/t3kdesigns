@@ -316,6 +316,25 @@ export const LOOKS: Record<string, Look> = {
     ring: { inner: 1.5, outer: 1.62, color: "#e8bb63", opacity: 0.6, ringlet: true },
     marker: { azimuth: 2.2, size: 1, glow: "#d0384e" },
   },
+  // Iowa River Dentistry: calm water-world bands, deep navy to soft teal to warm white,
+  // an aqua limb, the brand mark's river ripple for a ring (its near arc reads as a
+  // smile), and one tooth-white light past the terminator
+  iowariverdentistry: {
+    kind: KIND.silver,
+    a: "#0a2236",
+    b: "#2a9d97",
+    c: "#cdeee8",
+    atmo: "#7fd3cb",
+    atmoStrength: 0.75,
+    atmoHeight: 0.045,
+    lights: "#fbf8f3",
+    lightAmount: 1.3,
+    cloud: 0,
+    spec: 0.3,
+    spin: 0,
+    ring: { inner: 1.45, outer: 1.78, color: "#9be0d8", color2: "#2a9d97", opacity: 0.6, ripple: true },
+    marker: { azimuth: 1.7, size: 1, glow: "#fbf8f3" },
+  },
   // —— studio products added since ——
   // HOLLER! — a night-market world lifted off the app's own map: violet
   // asphalt, mint rivers, gold and ember venues burning like live lines,
@@ -392,4 +411,5 @@ export const CHIP: Record<string, { short: string; tones?: [string, string, stri
   donjulio: { short: "Don Julio" },
   holler: { short: "Holler!", tones: ["#4a3a78", "#1a1430", "#0b0916"] },
   chancesr: { short: "Chances R", tones: ["#a51c30", "#4a1418", "#120a07"] },
+  iowariverdentistry: { short: "Iowa River", tones: ["#7fd3cb", "#2a9d97", "#0a2236"] },
 };

@@ -86,6 +86,7 @@ const LANES: { id: string; seed: number; r: number; dock?: number; ring: Body["r
   { id: "sob-rentals", seed: 4, r: 2.0, ring: "inner" },
   { id: "calming-the-chaos", seed: 5, r: 1.65, ring: "inner" },
   { id: "holotracker", seed: 6, r: 1.25, dock: 2.1, ring: "inner" },
+  { id: "iowariverdentistry", seed: 29, r: 1.7, ring: "inner" },
   // client sites
   { id: "sts", seed: 20, r: 1.75, ring: "outer" },
   { id: "georgeandnicks", seed: 21, r: 1.9, ring: "outer" },

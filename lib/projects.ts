@@ -209,6 +209,17 @@ export const projects: Project[] = [
     tags: ["Restaurant", "Menu"],
     color: "#e8bb63",
   },
+  {
+    id: "iowariverdentistry",
+    name: "Iowa River Dentistry",
+    oneLiner: "Nobody loves the dentist. Iowa Falls knows.",
+    blurb:
+      "A preview for Dr. Bryn Ealy’s family practice: a “What’s bugging you?” picker that explains what she checks first, the treatment path in plain words and the first visit, all built for people who’d rather not be there at all.",
+    href: "https://iowariverdentistry.t3kdesigns.app/",
+    status: "live",
+    tags: ["Dental", "Symptom picker"],
+    color: "#7fd3cb",
+  },
 ];
 
 export const statusLabel: Record<ProjectStatus, string> = {
