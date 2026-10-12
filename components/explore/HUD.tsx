@@ -76,42 +76,43 @@ export default function HUD({
             className="flex max-w-[min(34rem,calc(100vw-2.5rem))] flex-col items-center"
           >
             {world ? (
-              <>
-                <p className="display text-[clamp(1.05rem,4.2vw,1.6rem)] uppercase leading-tight tracking-[0.2em] text-ice">
-                  {world.name}
-                </p>
-                <span
-                  aria-hidden
-                  className="my-2.5 block h-px w-[min(18rem,70vw)]"
-                  style={{
-                    background: `linear-gradient(90deg, transparent, ${world.accent}cc 18%, ${world.accent}cc 82%, transparent)`,
-                  }}
-                />
-                {world.project?.oneLiner && (
-                  <p className="text-[0.8125rem] leading-snug text-[rgba(232,228,255,0.72)] sm:text-[0.875rem]">
-                    {world.project.oneLiner}
-                  </p>
-                )}
-                {href &&
-                  (external ? (
-                    <a
-                      href={href}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="inline-link pointer-events-auto mt-2 py-1 text-[0.8125rem] tracking-[0.04em]"
-                    >
-                      open site →
-                    </a>
-                  ) : (
-                    <Link
-                      href={href}
-                      prefetch={false}
-                      className="inline-link pointer-events-auto mt-2 py-1 text-[0.8125rem] tracking-[0.04em]"
-                    >
-                      open site →
-                    </Link>
-                  ))}
-              </>
+              (() => {
+                // The whole nameplate is the way in: name, tagline and "open site →" are one link,
+                // so a click anywhere on it opens the site, not just on the small last line.
+                const plateBody = (
+                  <>
+                    <span className="display block text-[clamp(1.05rem,4.2vw,1.6rem)] uppercase leading-tight tracking-[0.2em] text-ice">
+                      {world.name}
+                    </span>
+                    <span
+                      aria-hidden
+                      className="my-2.5 block h-px w-[min(18rem,70vw)]"
+                      style={{
+                        background: `linear-gradient(90deg, transparent, ${world.accent}cc 18%, ${world.accent}cc 82%, transparent)`,
+                      }}
+                    />
+                    {world.project?.oneLiner && (
+                      <span className="block text-[0.8125rem] leading-snug text-[rgba(232,228,255,0.72)] sm:text-[0.875rem]">
+                        {world.project.oneLiner}
+                      </span>
+                    )}
+                    {href && (
+                      <span className="inline-link mt-2 py-1 text-[0.8125rem] tracking-[0.04em]">open site →</span>
+                    )}
+                  </>
+                );
+                const plateClass = "pointer-events-auto flex flex-col items-center rounded-2xl px-4 py-2";
+                if (!href) return <div className="flex flex-col items-center">{plateBody}</div>;
+                return external ? (
+                  <a href={href} target="_blank" rel="noreferrer noopener" className={plateClass}>
+                    {plateBody}
+                  </a>
+                ) : (
+                  <Link href={href} prefetch={false} className={plateClass}>
+                    {plateBody}
+                  </Link>
+                );
+              })()
             ) : heading ? (
               <p className="eyebrow flex items-center gap-2">
                 <span
