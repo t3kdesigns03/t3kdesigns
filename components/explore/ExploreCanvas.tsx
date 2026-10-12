@@ -48,7 +48,8 @@ export default function ExploreCanvas({
   const budget = BUDGET[tier];
   // the watchdog lowers resolution rather than particles: planets are the subject
   const [dprMax, setDprMax] = useState(mobile ? 1 : 1.5);
-  const pool = useMemo(() => new PointPool(256), []);
+  // 24 dock lights a world plus markers, then the craft's nav, ring windows and ion trail
+  const pool = useMemo(() => new PointPool(640), []);
 
   useEffect(() => {
     const onVis = () => setAwake(!document.hidden);

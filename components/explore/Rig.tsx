@@ -125,8 +125,10 @@ export default function Rig({
       dUp.current.copy(f.up);
     } else if ((f.mode === "travel" || f.mode === "ease") && f.target) {
       // Autopilot: ride behind the courier on the line to the target, so the
-      // destination sits dead ahead over the hull for the whole hop and
-      // whatever else is out there slides past at the edges.
+      // destination sits dead ahead over the hull as it lands. While the route
+      // swings wide, chase the hull's heading instead (the free-flight shot),
+      // or the craft sweeps straight out of frame; hand over to the target
+      // line through the approach.
       const toT = out.current.copy(f.target.center).sub(f.pos);
       const dist = toT.length();
       toT.divideScalar(Math.max(dist, 1e-4));
@@ -136,6 +138,15 @@ export default function Rig({
         .addScaledVector(toT, -Dt)
         .addScaledVector(f.up, Dt * 0.42);
       dLook.current.copy(f.pos).addScaledVector(toT, Math.min(dist * 0.5, Dt * 2.5));
+      if (f.mode === "travel") {
+        const chase = 1 - THREE.MathUtils.smoothstep(f.route.t, 0.68, 0.95);
+        if (chase > 0) {
+          const c = off.current.copy(f.pos).addScaledVector(f.fwd, -D).addScaledVector(f.up, D * 0.3);
+          dPos.current.lerp(c, chase);
+          c.copy(f.pos).addScaledVector(f.fwd, D * 0.4);
+          dLook.current.lerp(c, chase);
+        }
+      }
       dUp.current.copy(f.up);
     } else {
       dPos.current

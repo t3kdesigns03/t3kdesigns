@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { GALAXY_DIR, allBodies, hub, worlds, type Body } from "./layout";
+import { GALAXY_DIR, LIGHT_DIR, allBodies, hub, worlds, type Body } from "./layout";
 import { exploreStore } from "./store";
 
 /**
@@ -16,7 +16,6 @@ const TRAVEL_MAX = 30;
 const APPROACH = 4.5;
 /** space has no drag; a toy does, or you drift into the void forever */
 const DRAG = 0.36;
-const STEER = 2.4;
 /** parked, the craft drifts round slowly: about two minutes a lap */
 const ORBIT_OMEGA = 0.05;
 /** park a little short of a landmark, so the craft does not sit on it */
@@ -24,6 +23,8 @@ const LANDMARK_LEAD = 0.28;
 const TAU = Math.PI * 2;
 /** soft edge of the map */
 const BOUNDARY = 190;
+/** route arc-length table resolution: the craft moves by distance, not by curve parameter */
+const LUT_N = 48;
 
 export const CAM_MIN = 3.2;
 export const CAM_MAX = 16;
@@ -41,6 +42,8 @@ export const flight = {
   /** the craft's (and the parked camera's) sense of up: the pole it orbits */
   up: new THREE.Vector3(0, 1, 0),
   bank: 0,
+  /** extra roll on top of the bank: the approach flourish */
+  roll: 0,
   /** 0..1, drives the ion burn */
   thrust: 0,
   mode: "orbit" as Mode,
@@ -61,6 +64,28 @@ export const flight = {
     t: 0,
     dur: 1.6,
   },
+  /**
+   * Autopilot route: one cubic Bézier from wherever we were to a point on the
+   * target's parking circle, swung wide (an arc, a swerve, a slingshot round
+   * the studio, or a hook in from the far side). Built once per trip, walked
+   * by `t`; nothing allocates while flying it.
+   */
+  route: {
+    p0: new THREE.Vector3(),
+    p1: new THREE.Vector3(),
+    p2: new THREE.Vector3(),
+    p3: new THREE.Vector3(),
+    t: 0,
+    dur: 4,
+    /** time-curve slopes at each end: 0 = ease from rest; >0 carries speed through a retarget */
+    m0: 0,
+    m1: 0,
+    /** barrel roll on approach: -1, 0 or 1 */
+    rollDir: 0,
+    /** arc length, and cumulative length at LUT_N even steps of the curve parameter */
+    len: 1,
+    lut: new Float32Array(LUT_N + 1),
+  },
   /** a world just left is not re-captured until we are clear of it */
   ignore: null as Body | null,
   camDist: 7,
@@ -76,6 +101,194 @@ const _b = new THREE.Vector3();
 const _c = new THREE.Vector3();
 const _m = new THREE.Matrix4();
 const _q = new THREE.Quaternion();
+const _r0 = new THREE.Vector3();
+const _r1 = new THREE.Vector3();
+const _r2 = new THREE.Vector3();
+const _r3 = new THREE.Vector3();
+
+/** cubic Bézier through the route's four points, at `s` */
+function bezier(s: number, out: THREE.Vector3) {
+  const { p0, p1, p2, p3 } = flight.route;
+  const k = 1 - s;
+  return out
+    .copy(p0)
+    .multiplyScalar(k * k * k)
+    .addScaledVector(p1, 3 * k * k * s)
+    .addScaledVector(p2, 3 * k * s * s)
+    .addScaledVector(p3, s * s * s);
+}
+
+/** curve parameter at fraction `s` of the route's length */
+function paramAt(s: number) {
+  const { lut, len } = flight.route;
+  const target = THREE.MathUtils.clamp(s, 0, 1) * len;
+  let lo = 0;
+  let hi = LUT_N;
+  while (hi - lo > 1) {
+    const m = (lo + hi) >> 1;
+    if (lut[m] < target) lo = m;
+    else hi = m;
+  }
+  const span = lut[hi] - lut[lo];
+  return (lo + (span > 1e-6 ? (target - lut[lo]) / span : 0)) / LUT_N;
+}
+
+/** Hermite time curve: 0 → 1, leaving at slope m0 and landing at slope m1 (both ≤ 3 stays monotone) */
+function timeCurve(t: number, m0: number, m1: number) {
+  const t2 = t * t;
+  const t3 = t2 * t;
+  return (t3 - 2 * t2 + t) * m0 + (-2 * t3 + 3 * t2) + (t3 - t2) * m1;
+}
+
+const smooth = (a: number, b: number, x: number) => {
+  const t = THREE.MathUtils.clamp((x - a) / (b - a), 0, 1);
+  return t * t * (3 - 2 * t);
+};
+const pick = (lo: number, hi: number) => lo + Math.random() * (hi - lo);
+const coin = () => (Math.random() < 0.5 ? -1 : 1);
+
+const _k0 = new THREE.Vector3();
+const _k1 = new THREE.Vector3();
+const _k2 = new THREE.Vector3();
+
+/**
+ * Bend the route's handles until the curve clears every world it would
+ * graze. Done once, when the route is laid out: pushing the craft around
+ * worlds frame by frame swings it across them at many times cruise speed.
+ */
+function clearRoute(b: Body, fallback: THREE.Vector3) {
+  const R = flight.route;
+  for (let pass = 0; pass < 4; pass++) {
+    let moved = false;
+    for (const o of allBodies) {
+      if (o === b) continue;
+      const clear = o.radius * 3.2 + 2;
+      let best = Infinity;
+      let bestS = 0;
+      for (let i = 1; i < 24; i++) {
+        const s = i / 24;
+        // the world we are leaving: only its far side counts
+        if (o === flight.body && s < 0.2) continue;
+        const dist = bezier(s, _k0).distanceTo(o.center);
+        if (dist < best) {
+          best = dist;
+          bestS = s;
+        }
+      }
+      if (best >= clear) continue;
+      const away = bezier(bestS, _k0).sub(o.center);
+      if (away.lengthSq() < 1e-4) away.copy(fallback);
+      away.normalize();
+      // move the curve's point at bestS out by `need`, sharing it between the two handles
+      const need = (clear - best) * 1.15;
+      const s = bestS;
+      const k = Math.min(4, 1 / (3 * (1 - s) * s * ((1 - s) * (1 - s) + s * s)));
+      R.p1.addScaledVector(_k1.copy(away), need * (1 - s) * k);
+      R.p2.addScaledVector(_k2.copy(away), need * s * k);
+      moved = true;
+    }
+    if (!moved) break;
+  }
+}
+
+/**
+ * Lay out a wide, different-every-time route to `b`. The end sits on the
+ * parking circle, arriving along its tangent, so `enterOrbit` picks up
+ * without a jump. The start leaves along the current heading, at the
+ * current speed, so a retarget mid-flight bends instead of stopping.
+ */
+function buildRoute(b: Body, attempt = 0) {
+  const f = flight;
+  const R = f.route;
+  const n = b.pole;
+  R.p0.copy(f.pos);
+
+  // arrive a little round the circle from the near side, either way
+  const radial = _r0.copy(f.pos).sub(b.center);
+  radial.addScaledVector(n, -radial.dot(n));
+  if (radial.lengthSq() < 1e-6) radial.copy(n).cross(FWD_Z);
+  radial.normalize().applyAxisAngle(n, coin() * pick(0.45, 1.15));
+  R.p3.copy(b.center).addScaledVector(radial, b.orbitR);
+
+  const chord = _r1.copy(R.p3).sub(R.p0);
+  const L = Math.max(chord.length(), 1);
+  // arrive along the circle's tangent; one trip in five hooks in from the far side
+  const tangent = _r2.copy(n).cross(radial).normalize();
+  let tSign = tangent.dot(chord) > 0 ? 1 : -1;
+  if (Math.random() < 0.2) tSign = -tSign;
+  tangent.multiplyScalar(tSign);
+
+  // which way to swing: sideways in the orbital plane, a little lift out of it
+  const mid = _r3.copy(R.p0).add(R.p3).multiplyScalar(0.5);
+  const side = _a.copy(LIGHT_DIR).cross(chord);
+  if (side.lengthSq() < 1e-6) side.set(1, 0, 0);
+  side.normalize();
+
+  // slingshot round the studio when it is roughly in the way and not an end
+  const toHub = _b.copy(hub.center).sub(mid);
+  const hubOff = toHub.length();
+  const hubIsEnd = b === hub || f.body === hub || f.pos.distanceTo(hub.center) < hub.orbitR * 1.5;
+  const sling = !hubIsEnd && L > 30 && hubOff < L * 0.45 && Math.random() < 0.6;
+
+  let bulge: number;
+  if (sling) {
+    // bend the apex past the far side of the star, clear of it
+    side.copy(toHub).addScaledVector(LIGHT_DIR, -toHub.dot(LIGHT_DIR));
+    if (side.lengthSq() < 1e-6) side.copy(LIGHT_DIR).cross(chord);
+    side.normalize();
+    bulge = Math.max(hubOff + hub.radius * 4 + 6, L * 0.45) / 0.75;
+  } else {
+    side.multiplyScalar(coin());
+    bulge = Math.max(8, L * pick(0.45, 0.8)) / 0.75;
+  }
+  const lift = coin() * L * pick(0.04, 0.16);
+  // one trip in three is an S: the two handles swing opposite ways
+  const swerve = !sling && Math.random() < 0.33 ? -1 : 1;
+
+  const hand0 = L * pick(0.28, 0.4);
+  const hand1 = L * pick(0.22, 0.34);
+  R.p1.copy(mid).addScaledVector(side, bulge).addScaledVector(LIGHT_DIR, lift);
+  R.p1.lerp(R.p0, 0.3);
+  R.p2.copy(mid).addScaledVector(side, bulge * swerve).addScaledVector(LIGHT_DIR, lift * swerve);
+  R.p2.lerp(R.p3, 0.3).addScaledVector(tangent, -hand1);
+
+  // leave along where we are already heading, so the hull never snaps round
+  const speed = f.vel.length();
+  const dep = speed > 0.05 ? _b.copy(f.vel).divideScalar(speed) : _b.copy(f.fwd);
+  const lead = Math.max(R.p1.distanceTo(R.p0), hand0);
+  // already under way (a retarget mid-flight): leave exactly along the velocity, so the path has no kink
+  const dir = speed > 1 ? _c.copy(dep) : _c.copy(R.p1).sub(R.p0).normalize().lerp(dep, 0.5).normalize();
+  R.p1.copy(R.p0).addScaledVector(dir, lead);
+
+  clearRoute(b, side);
+  // clearing may have nudged the first handle; under way, keep it on the velocity line
+  if (speed > 1) R.p1.copy(R.p0).addScaledVector(dep, Math.max(_k0.copy(R.p1).sub(R.p0).dot(dep), lead * 0.5));
+
+  // arc-length table: the time curve then sets the speed directly, however
+  // unevenly the handles space the curve
+  let len = 0;
+  R.lut[0] = 0;
+  _c.copy(R.p0);
+  for (let i = 1; i <= LUT_N; i++) {
+    bezier(i / LUT_N, _a);
+    len += _a.distanceTo(_c);
+    R.lut[i] = len;
+    _c.copy(_a);
+  }
+  R.len = Math.max(len, 1e-3);
+  // a roll of the dice that came out nearly straight (a tight S, handles pulled in clearing a world): roll again
+  if (R.len < L * 1.3 && attempt < 4) {
+    buildRoute(b, attempt + 1);
+    return;
+  }
+  // length sets the time: about the old cruise speed at the peak
+  R.dur = THREE.MathUtils.clamp(1.4 + len / 24, 2.6, 12);
+  // carry the current speed in; arrive at parking-orbit speed (slopes are in distance / total length)
+  R.m0 = THREE.MathUtils.clamp((speed * R.dur) / R.len, 0, 2);
+  R.m1 = THREE.MathUtils.clamp((ORBIT_OMEGA * b.orbitR * R.dur) / R.len, 0, 0.5);
+  R.t = 0;
+  R.rollDir = Math.random() < 0.65 ? coin() : 0;
+}
 
 function tangentAt(out: THREE.Vector3) {
   const { u, v, angle } = flight.orbit;
@@ -145,6 +358,7 @@ export function spawn() {
   flight.vel.copy(flight.fwd).multiplyScalar(ORBIT_OMEGA * b.orbitR);
   flight.thrust = 0;
   flight.bank = 0;
+  flight.roll = 0;
   flight.up.copy(b.pole);
   exploreStore.setParked(b.id);
 }
@@ -184,10 +398,10 @@ export function flyTo(b: Body) {
   }
 
   flight.ignore = null;
+  buildRoute(b);
   flight.mode = "travel";
   flight.target = b;
   flight.body = null;
-  flight.thrust = 1;
   exploreStore.setTarget(b.id);
 }
 
@@ -232,41 +446,40 @@ export function step(dt: number): boolean {
     moving = !f.reduced || f.pos.distanceToSquared(_a) > 1e-4 || f.thrust > 0.02;
   } else if (f.mode === "travel" && f.target) {
     const b = f.target;
-    const off = _a.copy(f.pos).sub(b.center);
-    const dist = off.length();
-    off.divideScalar(Math.max(dist, 1e-4));
+    const R = f.route;
+    R.t = Math.min(1, R.t + dt / R.dur);
+    const next = bezier(paramAt(timeCurve(R.t, R.m0, R.m1)), _a);
 
-    // aim beside the planet, not at it, so we sweep into orbit
-    const side = _b.copy(UP).cross(off);
-    if (side.lengthSq() < 1e-4) side.set(1, 0, 0);
-    side.normalize();
-    const entry = _c
-      .copy(off)
-      .addScaledVector(side, 0.9)
-      .normalize()
-      .multiplyScalar(b.orbitR)
-      .add(b.center);
-
-    const toEntry = entry.sub(f.pos);
-    const d = toEntry.length();
-    const speed = Math.min(TRAVEL_MAX, 1.5 + d * 1.1);
-    const desired = toEntry.multiplyScalar(speed / Math.max(d, 1e-4));
-
-    // steer around anything in the way
-    for (const o of allBodies) {
-      if (o === b) continue;
-      const away = _b.copy(f.pos).sub(o.center);
-      const od = away.length();
-      const clear = o.radius * 3.2 + 2;
-      if (od < clear) desired.addScaledVector(away.divideScalar(od), (clear - od) * 2.2);
+    // last-resort push off any world the route still grazes. The route was
+    // cleared to a wider berth when it was laid out, so this rarely engages;
+    // it is smooth in position and fades in after departure and out before arrival.
+    const w = smooth(0, 0.14, R.t) * (1 - smooth(0.86, 1, R.t));
+    if (w > 0) {
+      for (const o of allBodies) {
+        if (o === b) continue;
+        const away = _b.copy(next).sub(o.center);
+        const od = away.length();
+        const clear = o.radius * 2.2 + 0.5;
+        if (od < clear && od > 1e-4) next.addScaledVector(away, (w * (clear - od) * (clear - od)) / (clear * od));
+      }
     }
 
-    const accel = _a.copy(desired).sub(f.vel);
-    f.thrust = Math.max(f.thrust * Math.exp(-2 * dt), Math.min(1, accel.length() / 7));
-    f.vel.addScaledVector(accel, 1 - Math.exp(-STEER * dt));
-    f.pos.addScaledVector(f.vel, dt);
+    f.vel.copy(next).sub(f.pos).divideScalar(Math.max(dt, 1e-4));
+    if (f.vel.length() > TRAVEL_MAX * 1.6) f.vel.setLength(TRAVEL_MAX * 1.6);
+    f.pos.copy(next);
+    // full burn on the way out, easing off on the final approach
+    f.thrust = THREE.MathUtils.damp(f.thrust, R.t < 0.8 ? 1 : 0.35, 4, dt);
 
-    if (dist <= b.orbitR * 1.06 || d < 0.8) enterOrbit(b);
+    // a barrel roll through the last stretch, finishing level before the park
+    f.roll = R.rollDir * Math.PI * 2 * smooth(0.62, 0.88, R.t);
+
+    if (R.t >= 1) {
+      f.pos.copy(R.p3);
+      // arrive moving along the circle, at parking speed
+      f.vel.copy(R.p3).sub(R.p2).setLength(ORBIT_OMEGA * b.orbitR);
+      f.roll = 0;
+      enterOrbit(b);
+    }
   } else if (f.mode === "ease" && f.target) {
     f.ease.t = Math.min(1, f.ease.t + dt / f.ease.dur);
     const e = easeInOut(f.ease.t);
@@ -291,6 +504,13 @@ export function step(dt: number): boolean {
       }
     }
     moving = f.vel.lengthSq() > 1e-3;
+  }
+
+  // a roll cut short (a burn, a park) unwinds to the nearest whole turn
+  if (f.mode !== "travel" && f.roll !== 0) {
+    const level = Math.round(f.roll / TAU) * TAU;
+    f.roll = THREE.MathUtils.damp(f.roll, level, 4, dt);
+    if (Math.abs(f.roll - level) < 1e-3) f.roll = 0;
   }
 
   // never inside a crust, whatever else happened
@@ -324,8 +544,7 @@ export function step(dt: number): boolean {
 
   const up = Math.abs(f.fwd.dot(f.up)) > 0.98 ? FWD_Z : f.up;
   _m.lookAt(f.fwd, ZERO, up);
-  f.quat.setFromRotationMatrix(_m).multiply(_q.setFromAxisAngle(FWD_Z, f.bank));
+  f.quat.setFromRotationMatrix(_m).multiply(_q.setFromAxisAngle(FWD_Z, f.bank + f.roll));
 
   return moving || f.thrust > 0.02;
 }
-
