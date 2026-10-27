@@ -346,11 +346,11 @@ export const LOOKS: Record<string, Look> = {
   // cyan ring like a console rule
   clidk: {
     kind: KIND.studio,
-    a: "#050807",
-    b: "#0e1915",
-    c: "#1d3a2e",
+    a: "#050706",
+    b: "#101513",
+    c: "#28322e",
     atmo: "#4ade80",
-    atmoStrength: 0.2,
+    atmoStrength: 0.14,
     atmoHeight: 0.025,
     lights: "#a7f3d0",
     lightAmount: 1.4,
