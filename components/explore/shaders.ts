@@ -186,7 +186,7 @@ export const planetFrag = /* glsl */ `
       spec = 0.35;
       gloss = 140.0;
     } else if (kind == 1) {
-      // SPYDER — deep ocean, a few coasts, thin cloud, coastal light string
+      // OCEAN — deep ocean, a few coasts, thin cloud, coastal light string
       float h = fbm(p * 1.7 + uSeed) * 0.75 + fbm(p * 5.0 + uSeed * 2.0) * 0.25;
       float land = smoothstep(0.565, 0.58, h);
       float shallow = smoothstep(0.48, 0.565, h) * (1.0 - land);

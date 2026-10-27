@@ -15,21 +15,22 @@ export type Project = {
 /**
  * Single source of truth. The 3D constellation, the mission dock and
  * /explore all render from this array. The first eight are the original
- * constellation; the next seven fill the gaps between them on the homepage.
+ * constellation (CLiDK holds the first slot, so the art-directed positions
+ * never shift); the next seven fill the gaps between them on the homepage.
  * Rows after that perch just outside the homepage ring. On /explore every
  * row gets its own orbital lane round the studio (see explore/layout.ts).
  */
 export const projects: Project[] = [
   {
-    id: "spydernetwork",
-    name: "SpyderNetwork",
-    oneLiner: "The largest live-cam network at Lake of the Ozarks.",
+    id: "clidk",
+    name: "CLiDK",
+    oneLiner: "Know the CLI. CCNA to CCIE labs on your phone.",
     blurb:
-      "Sixty-plus live streams in one catalog, on one map, with lake conditions beside them. Built as a Next.js app with live players, a cam catalog, and an owner dashboard behind it.",
-    href: "https://spydernetwork.com",
+      "Cisco command-line practice that fits in a pocket: CCNA through CCIE labs, worked from your phone. Built as a PWA, so it installs like an app.",
+    href: "https://clidk.com",
     status: "live",
-    tags: ["Next.js", "Live video", "Maps", "Dashboard"],
-    color: "#8ab4ff",
+    tags: ["CLI", "Labs", "Cisco", "PWA"],
+    color: "#4ade80",
   },
   {
     id: "glowdaily",
@@ -219,6 +220,39 @@ export const projects: Project[] = [
     status: "live",
     tags: ["Dental", "Symptom picker"],
     color: "#7fd3cb",
+  },
+  {
+    id: "kollidr",
+    name: "CoLLiDr",
+    oneLiner: "Hadron collider simulator.",
+    blurb:
+      "A hadron collider simulator, built alongside CLiDK. Particle physics you can run in the browser.",
+    href: "https://kollidr.clidk.com",
+    status: "live",
+    tags: ["Simulator", "Physics"],
+    color: "#f59e0b",
+  },
+  {
+    id: "ff",
+    name: "Friendly Fraud",
+    oneLiner: "Chargeback / first-party misuse tooling.",
+    blurb:
+      "Tooling for chargebacks and first-party misuse: the disputes where the buyer is the one who made the purchase.",
+    href: "https://ff.t3kdesigns.app",
+    status: "live",
+    tags: ["Fraud", "Chargebacks"],
+    color: "#f87171",
+  },
+  {
+    id: "llgranite",
+    name: "L&L Granite",
+    oneLiner: "Granite, marble & quartz, crafted in Statesville.",
+    blurb:
+      "The site for a Statesville stone shop: granite, marble and quartz countertops, crafted in Statesville.",
+    href: "https://llgranite.t3kdesigns.app",
+    status: "live",
+    tags: ["Contractor", "Countertops"],
+    color: "#c4b5a0",
   },
 ];
 

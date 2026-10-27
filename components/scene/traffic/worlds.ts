@@ -33,20 +33,22 @@ export type WorldDef = {
 };
 
 export const WORLDS: Record<string, WorldDef> = {
-  spydernetwork: {
-    id: "spydernetwork",
-    base: "#07182c",
-    base2: "#1b2a33",
-    atmo: "#6ea8ff",
-    radius: 0.225,
-    feature: 2.6,
-    city: 1.0,
-    cloud: 0.38,
-    spec: 0.95,
-    atmoStrength: 0.3,
+  // CLiDK holds the first slot: green-black glass, phosphor lights, one fine ring
+  clidk: {
+    id: "clidk",
+    base: "#050807",
+    base2: "#12241c",
+    atmo: "#4ade80",
+    radius: 0.19,
+    feature: 3.2,
+    city: 0.7,
+    cloud: 0,
+    spec: 0.3,
+    atmoStrength: 0.12,
     bands: 0,
-    spin: 0.05,
+    spin: 0.045,
     tilt: 0.36,
+    ring: { inner: 0.28, outer: 0.3, color: "#5eead4", opacity: 0.5 },
   },
   glowdaily: {
     id: "glowdaily",
@@ -246,6 +248,30 @@ Object.assign(WORLDS, {
     spin: 0.03, tilt: 0.32,
     ring: { inner: 0.215, outer: 0.245, color: "#9be0d8", opacity: 0.6 },
     beacon: { color: "#fbf8f3", size: 1.7 },
+  },
+} satisfies Record<string, WorldDef>);
+
+/**
+ * Newer studio products, perched round the far side with Holler!: CoLLiDr's
+ * amber-cracked steel and accelerator ring, Friendly Fraud's cold slate and
+ * one red alert light, L&L Granite's speckled stone.
+ */
+Object.assign(WORLDS, {
+  kollidr: {
+    id: "kollidr", base: "#060a11", base2: "#1d3348", atmo: "#22d3ee", radius: 0.15,
+    feature: 3.0, city: 0.9, cloud: 0, spec: 0.1, atmoStrength: 0.2, bands: 0,
+    spin: 0.04, tilt: -0.26,
+    ring: { inner: 0.225, outer: 0.24, color: "#22d3ee", opacity: 0.7 },
+  },
+  ff: {
+    id: "ff", base: "#07080b", base2: "#1c2230", atmo: "#f0a0a8", radius: 0.13,
+    feature: 3.2, city: 0.08, cloud: 0, spec: 0, atmoStrength: 0.14, bands: 0,
+    spin: 0.03, tilt: 0.42, beacon: { color: "#ff4d5e", size: 1.8 },
+  },
+  llgranite: {
+    id: "llgranite", base: "#2e2a26", base2: "#8a8076", atmo: "#e7dfd2", radius: 0.13,
+    feature: 4.2, city: 0.05, cloud: 0, spec: 0, atmoStrength: 0.05, bands: 0,
+    spin: 0.03, tilt: 0.18,
   },
 } satisfies Record<string, WorldDef>);
 

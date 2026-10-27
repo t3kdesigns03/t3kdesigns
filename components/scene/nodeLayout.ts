@@ -41,6 +41,11 @@ const PERCH: Record<string, { a: number; ring: number; y: number; scale: number 
   chancesr: { a: 5.3, ring: 11.4, y: -1.25, scale: 0.42 },
   // the widest gap left on both screens, round the far side past Holler!
   iowariverdentistry: { a: 3.55, ring: 11.8, y: -1.2, scale: 0.42 },
+  // the CLiDK family and the newer studio products, scored against both
+  // camera poses into the far-side gaps still open round Holler!
+  kollidr: { a: 3.85, ring: 12.2, y: -1.5, scale: 0.4 },
+  ff: { a: 4.2, ring: 12.6, y: -1.5, scale: 0.36 },
+  llgranite: { a: 3.75, ring: 12.6, y: 1.5, scale: 0.38 },
 };
 
 export const nodeSpots: NodeSpot[] = projects.map((p, i) => {

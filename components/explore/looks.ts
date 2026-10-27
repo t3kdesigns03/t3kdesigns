@@ -79,21 +79,6 @@ export const LOOKS: Record<string, Look> = {
     spin: 0.018,
     ring: { inner: 1.46, outer: 1.74, color: "#cfc2f2", opacity: 0.5, ringlet: true },
   },
-  // ocean, thin cloud, a string of coastal light
-  spydernetwork: {
-    kind: KIND.ocean,
-    a: "#041428",
-    b: "#1f3a33",
-    c: "#5a5a45",
-    atmo: "#6fa6ff",
-    atmoStrength: 0.9,
-    atmoHeight: 0.045,
-    lights: "#ffd9a8",
-    lightAmount: 1.4,
-    cloud: 0.55,
-    spec: 0.6,
-    spin: 0.024,
-  },
   // warm amber air, tea-gold towns
   glowdaily: {
     kind: KIND.amber,
@@ -356,6 +341,74 @@ export const LOOKS: Record<string, Look> = {
     ring: { inner: 1.42, outer: 2.02, color: "#5fe6f5", color2: "#8b7cff", opacity: 0.85, ripple: true },
     marker: { azimuth: 1.35, size: 1, glow: "#ff2d6a" },
   },
+  // CLiDK — a terminal world: green-black glass threaded with lit circuit
+  // seams (the studio recipe in a phosphor key), almost no air, one fine
+  // cyan ring like a console rule
+  clidk: {
+    kind: KIND.studio,
+    a: "#050807",
+    b: "#0e1915",
+    c: "#1d3a2e",
+    atmo: "#4ade80",
+    atmoStrength: 0.2,
+    atmoHeight: 0.025,
+    lights: "#a7f3d0",
+    lightAmount: 1.4,
+    cloud: 0,
+    spec: 0.3,
+    spin: 0.02,
+    ring: { inner: 1.5, outer: 1.58, color: "#5eead4", opacity: 0.5 },
+  },
+  // CoLLiDr — steel-navy crust split by high-energy amber fractures, a cyan
+  // limb, and one crisp accelerator ring fading cyan to amber
+  kollidr: {
+    kind: KIND.ember,
+    a: "#060a11",
+    b: "#13202e",
+    c: "#28465f",
+    atmo: "#22d3ee",
+    atmoStrength: 0.6,
+    atmoHeight: 0.04,
+    lights: "#fbbf24",
+    lightAmount: 1.4,
+    cloud: 0,
+    spec: 0.1,
+    spin: 0.02,
+    ring: { inner: 1.52, outer: 1.6, color: "#22d3ee", color2: "#f59e0b", opacity: 0.7 },
+  },
+  // Friendly Fraud — a quiet cold slate world, a thin silver-red limb, and a
+  // single red alert light past the terminator
+  ff: {
+    kind: KIND.night,
+    a: "#07080b",
+    b: "#161b25",
+    c: "#3a4354",
+    atmo: "#f0a0a8",
+    atmoStrength: 0.45,
+    atmoHeight: 0.03,
+    lights: "#ff4d5e",
+    lightAmount: 1.4,
+    cloud: 0,
+    spec: 0,
+    spin: 0,
+    marker: { azimuth: 0.9, size: 1, glow: "#f87171" },
+  },
+  // L&L Granite — a speckled warm-grey stone moon cut by quarry benches,
+  // darker and greyer than Barber's limestone, pale quartz in the high ground
+  llgranite: {
+    kind: KIND.quarry,
+    a: "#24211e",
+    b: "#615a52",
+    c: "#c9bfb0",
+    atmo: "#e7dfd2",
+    atmoStrength: 0.1,
+    atmoHeight: 0.02,
+    lights: "#fff1dc",
+    lightAmount: 1.1,
+    cloud: 0,
+    spec: 0,
+    spin: 0.014,
+  },
   "scenery-giant": {
     kind: KIND.giant,
     a: "#3a2616",
@@ -395,7 +448,6 @@ export const LOOKS: Record<string, Look> = {
  */
 export const CHIP: Record<string, { short: string; tones?: [string, string, string] }> = {
   t3kdesigns: { short: "Studio", tones: ["#6a5c9c", "#241d3a", "#08070d"] },
-  spydernetwork: { short: "Spyder", tones: ["#4f8fe0", "#123f78", "#041428"] },
   glowdaily: { short: "GlowDaily", tones: ["#f4b865", "#b0602a", "#3a1a0a"] },
   "stuart-softball": { short: "SSL", tones: ["#8a877c", "#3a3833", "#141416"] },
   "sob-rentals": { short: "SOB", tones: ["#46d2cf", "#0f7f8f", "#03203a"] },
@@ -412,4 +464,8 @@ export const CHIP: Record<string, { short: string; tones?: [string, string, stri
   holler: { short: "Holler!", tones: ["#4a3a78", "#1a1430", "#0b0916"] },
   chancesr: { short: "Chances R", tones: ["#a51c30", "#4a1418", "#120a07"] },
   iowariverdentistry: { short: "Iowa River", tones: ["#7fd3cb", "#2a9d97", "#0a2236"] },
+  clidk: { short: "CLiDK", tones: ["#3fae74", "#123a2a", "#050807"] },
+  kollidr: { short: "CoLLiDr", tones: ["#e6a03a", "#28465f", "#060a11"] },
+  ff: { short: "FF", tones: ["#5a6272", "#1c2230", "#07080b"] },
+  llgranite: { short: "L&L", tones: ["#d6cfc4", "#8a8076", "#2e2a26"] },
 };

@@ -79,7 +79,8 @@ const HUB_PLACE = { id: "t3kdesigns", seed: 8, r: 2.4, dock: 2.45 };
 const LANES: { id: string; seed: number; r: number; dock?: number; ring: Body["ring"] }[] = [
   // the studio's own work — tooling closest to the sun
   { id: "porchlight", seed: 7, r: 1.45, ring: "inner" },
-  { id: "spydernetwork", seed: 1, r: 2.2, ring: "inner" },
+  // CLiDK takes the lane SpyderNetwork left, so every inner world after it keeps its place
+  { id: "clidk", seed: 30, r: 1.6, ring: "inner" },
   { id: "glowdaily", seed: 2, r: 1.9, ring: "inner" },
   { id: "holler", seed: 27, r: 1.9, dock: 2.4, ring: "inner" },
   { id: "stuart-softball", seed: 3, r: 1.5, ring: "inner" },
@@ -87,6 +88,9 @@ const LANES: { id: string; seed: number; r: number; dock?: number; ring: Body["r
   { id: "calming-the-chaos", seed: 5, r: 1.65, ring: "inner" },
   { id: "holotracker", seed: 6, r: 1.25, dock: 2.1, ring: "inner" },
   { id: "iowariverdentistry", seed: 29, r: 1.7, ring: "inner" },
+  { id: "kollidr", seed: 31, r: 1.85, ring: "inner" },
+  { id: "ff", seed: 32, r: 1.4, ring: "inner" },
+  { id: "llgranite", seed: 33, r: 1.55, ring: "inner" },
   // client sites
   { id: "sts", seed: 20, r: 1.75, ring: "outer" },
   { id: "georgeandnicks", seed: 21, r: 1.9, ring: "outer" },
@@ -98,16 +102,19 @@ const LANES: { id: string; seed: number; r: number; dock?: number; ring: Body["r
   { id: "chancesr", seed: 28, r: 1.85, ring: "outer" },
 ];
 const INNER_FIRST = 24;
-const INNER_STEP = 7.5;
-const OUTER_FIRST = 92;
+const INNER_STEP = 6;
 const OUTER_STEP = 8;
+/** the deliberate gap between the last studio lane and the first client lane */
+const RING_GAP = 10;
+const INNER_COUNT = LANES.filter((l) => l.ring === "inner").length;
+/** derived, so adding a studio product can never push it past a client site */
+const OUTER_FIRST = INNER_FIRST + (INNER_COUNT - 1) * INNER_STEP + RING_GAP;
 const GOLDEN = Math.PI * (3 - Math.sqrt(5));
 /** where the first lane's world sits round the hub */
 const LANE_START = 0.6;
 
 function laneRadius(i: number) {
-  const inner = LANES.filter((l) => l.ring === "inner").length;
-  return i < inner ? INNER_FIRST + i * INNER_STEP : OUTER_FIRST + (i - inner) * OUTER_STEP;
+  return i < INNER_COUNT ? INNER_FIRST + i * INNER_STEP : OUTER_FIRST + (i - INNER_COUNT) * OUTER_STEP;
 }
 
 function laneAt(a: number, R: number): [number, number, number] {
