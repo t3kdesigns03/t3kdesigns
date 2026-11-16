@@ -100,6 +100,9 @@ const LANES: { id: string; seed: number; r: number; dock?: number; ring: Body["r
   { id: "debtangel", seed: 25, r: 1.8, ring: "outer" },
   { id: "donjulio", seed: 26, r: 1.85, ring: "outer" },
   { id: "chancesr", seed: 28, r: 1.85, ring: "outer" },
+  { id: "butterbatch", seed: 34, r: 1.8, ring: "outer" },
+  { id: "greenfieldautosales", seed: 35, r: 1.6, ring: "outer" },
+  { id: "lawnquistadors", seed: 36, r: 1.75, ring: "outer" },
 ];
 const INNER_FIRST = 24;
 const INNER_STEP = 6;

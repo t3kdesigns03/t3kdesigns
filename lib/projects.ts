@@ -254,6 +254,39 @@ export const projects: Project[] = [
     tags: ["Contractor", "Countertops"],
     color: "#c4b5a0",
   },
+  {
+    id: "butterbatch",
+    name: "ButterBatch",
+    oneLiner: "Small-batch popcorn, real butter, Lincoln, Nebraska",
+    blurb:
+      "The site for a Lincoln, Nebraska popcorn shop: thirteen small-batch flavors popped in real butter, a $20 event bundle and a Build Your Box of six. Tap your bags in and the order goes straight to Messenger.",
+    href: "https://butterbatch.t3kdesigns.app",
+    status: "live",
+    tags: ["Storefront", "Ordering"],
+    color: "#ffc93c",
+  },
+  {
+    id: "greenfieldautosales",
+    name: "Greenfield Auto Sales",
+    oneLiner: "Used cars and trucks in Greenfield, Iowa since 2008",
+    blurb:
+      "The site for a family-owned used car and truck lot at 503 NE 6th St in Greenfield, Iowa, selling since July 2008: browse the lot, then call, text or stop by.",
+    href: "https://greenfieldautosales.t3kdesigns.app",
+    status: "live",
+    tags: ["Dealership"],
+    color: "#ff545e",
+  },
+  {
+    id: "lawnquistadors",
+    name: "Lawnquistadors",
+    oneLiner: "Lawn care in Lincoln, Nebraska. Lawns conquered.",
+    blurb:
+      "The site for a Lincoln, Nebraska lawn outfit: mowing, string trimming and blade edging, with clear communication, dependable service and a lawn left neat. Need your lawn conquered?",
+    href: "https://lawnquistadors.t3kdesigns.app",
+    status: "live",
+    tags: ["Lawn care"],
+    color: "#6cc24a",
+  },
 ];
 
 export const statusLabel: Record<ProjectStatus, string> = {

@@ -276,6 +276,30 @@ Object.assign(WORLDS, {
 } satisfies Record<string, WorldDef>);
 
 /**
+ * Three client sites perched with them: ButterBatch's royal-blue sea under
+ * popcorn-white cloud with butter-yellow shore lights, Greenfield Auto's
+ * graphite rock with one floodlit red-lit lot, Lawnquistadors' mown green
+ * and a rust banner light.
+ */
+Object.assign(WORLDS, {
+  butterbatch: {
+    id: "butterbatch", base: "#013893", base2: "#c98a1c", atmo: "#8fb0ff", radius: 0.14,
+    feature: 2.4, city: 0.9, cloud: 0.35, spec: 0.6, atmoStrength: 0.3, bands: 0,
+    spin: 0.035, tilt: 0.3,
+  },
+  greenfieldautosales: {
+    id: "greenfieldautosales", base: "#0a0a0c", base2: "#3a3a42", atmo: "#ff545e", radius: 0.13,
+    feature: 3.6, city: 0.4, cloud: 0, spec: 0.1, atmoStrength: 0.12, bands: 0,
+    spin: 0.03, tilt: -0.22, beacon: { color: "#da121e", size: 1.8 },
+  },
+  lawnquistadors: {
+    id: "lawnquistadors", base: "#003a06", base2: "#3c9a2c", atmo: "#d6ecc0", radius: 0.14,
+    feature: 2.8, city: 0.2, cloud: 0.12, spec: 0.15, atmoStrength: 0.22, bands: 0,
+    spin: 0.03, tilt: 0.36, beacon: { color: "#ff6123", size: 1.7 },
+  },
+} satisfies Record<string, WorldDef>);
+
+/**
  * Somewhere to fly that is not work. Scenery only — never in the dock,
  * never clickable, but far enough out that a run there reads as a journey.
  */

@@ -46,6 +46,12 @@ const PERCH: Record<string, { a: number; ring: number; y: number; scale: number 
   kollidr: { a: 3.85, ring: 12.2, y: -1.5, scale: 0.4 },
   ff: { a: 4.2, ring: 12.6, y: -1.5, scale: 0.36 },
   llgranite: { a: 3.75, ring: 12.6, y: 1.5, scale: 0.38 },
+  // three client sites, scored the same way against both camera poses on
+  // desktop and phone into what was left of the far side: each sits at least
+  // ~80px from its nearest neighbour in all four views
+  butterbatch: { a: 3.95, ring: 13, y: 1.2, scale: 0.4 },
+  greenfieldautosales: { a: 3.55, ring: 11.4, y: 0.6, scale: 0.38 },
+  lawnquistadors: { a: 3.7, ring: 12.2, y: -1.6, scale: 0.4 },
 };
 
 export const nodeSpots: NodeSpot[] = projects.map((p, i) => {

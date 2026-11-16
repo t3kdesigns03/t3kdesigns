@@ -4,7 +4,7 @@ import { SITE } from "@/lib/theme";
 
 export const metadata: Metadata = {
   title: `Explore · ${SITE.name}`,
-  description: "Fly between the twenty-one worlds of the T3KDesigns galaxy.",
+  description: "Fly between the twenty-four worlds of the T3KDesigns galaxy.",
   alternates: { canonical: "/explore" },
 };
 

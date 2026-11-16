@@ -409,6 +409,59 @@ export const LOOKS: Record<string, Look> = {
     spec: 0,
     spin: 0.014,
   },
+  // ButterBatch — the site's royal blue (#013893) as open sea, toasted-butter
+  // coasts going pale where the land rises, butter-yellow lights strung along
+  // the shore, and a sky full of white popcorn-puff cloud
+  butterbatch: {
+    kind: KIND.ocean,
+    a: "#013893",
+    b: "#dba235",
+    c: "#fff0b8",
+    atmo: "#8fb0ff",
+    atmoStrength: 0.9,
+    atmoHeight: 0.045,
+    lights: "#ffc93c",
+    lightAmount: 1.4,
+    cloud: 0.6,
+    spec: 0.9,
+    spin: 0.022,
+  },
+  // Greenfield Auto Sales — the site's graphite and silver as a quiet rock,
+  // a thin brand-red limb, and one floodlit lot glowing past the terminator
+  // with the town round it
+  greenfieldautosales: {
+    kind: KIND.rock,
+    a: "#0a0a0c",
+    b: "#27272e",
+    c: "#9aa0aa",
+    atmo: "#e0444e",
+    atmoStrength: 0.1,
+    atmoHeight: 0.025,
+    lights: "#f2f3f5",
+    lightAmount: 1.4,
+    cloud: 0,
+    spec: 0.1,
+    spin: 0,
+    marker: { azimuth: 1.2, size: 1, glow: "#da121e" },
+  },
+  // Lawnquistadors — a lawn world mown in stripes: the site's deep greens,
+  // parchment (#f2c892) where it's edged down to bare ground, a sage sky, and
+  // one rust banner light planted on the night side, the lawn conquered
+  lawnquistadors: {
+    kind: KIND.fairway,
+    a: "#003a06",
+    b: "#2f7d25",
+    c: "#f2c892",
+    atmo: "#d6ecc0",
+    atmoStrength: 0.45,
+    atmoHeight: 0.04,
+    lights: "#ff8a3d",
+    lightAmount: 1.4,
+    cloud: 0.15,
+    spec: 0.2,
+    spin: 0,
+    marker: { azimuth: 2.9, size: 1, glow: "#ff6123" },
+  },
   "scenery-giant": {
     kind: KIND.giant,
     a: "#3a2616",
@@ -468,4 +521,7 @@ export const CHIP: Record<string, { short: string; tones?: [string, string, stri
   kollidr: { short: "CoLLiDr", tones: ["#e6a03a", "#28465f", "#060a11"] },
   ff: { short: "FF", tones: ["#5a6272", "#1c2230", "#07080b"] },
   llgranite: { short: "L&L", tones: ["#d6cfc4", "#8a8076", "#2e2a26"] },
+  butterbatch: { short: "ButterBatch", tones: ["#4f7fe0", "#013893", "#001a4a"] },
+  greenfieldautosales: { short: "Greenfield", tones: ["#8a8f99", "#27272e", "#0a0a0c"] },
+  lawnquistadors: { short: "Lawnquistadors", tones: ["#6cc24a", "#2f7a26", "#003a06"] },
 };
